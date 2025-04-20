@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
+import "forge-std/console.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base} from "./Base.sol";
-import {IEVMTransaction} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
+import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 library FdcStrings {
     function toJsonString(

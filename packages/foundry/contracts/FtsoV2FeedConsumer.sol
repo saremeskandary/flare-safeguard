@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import {console2} from "forge-std/Test.sol";
-import {FtsoV2Interface} from "@flarenetwork/flare-periphery-contracts/coston2/FtsoV2Interface.sol";
-import {IFeeCalculator} from "@flarenetwork/flare-periphery-contracts/coston2/IFeeCalculator.sol";
+import {FtsoV2Interface} from "flare-periphery/src/coston2/FtsoV2Interface.sol";
+import {IFeeCalculator} from "flare-periphery/src/coston2/IFeeCalculator.sol";
 
 contract FtsoV2FeedConsumer {
     FtsoV2Interface internal ftsoV2;

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import "../src/flare/DataVerification.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcHub.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcVerification.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcRequestFeeConfigurations.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcInflationConfigurations.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
+import "../contracts/flare/DataVerification.sol";
+import "flare-periphery/src/coston2/IFdcHub.sol";
+import "flare-periphery/src/coston2/IFdcVerification.sol";
+import "flare-periphery/src/coston2/IFdcRequestFeeConfigurations.sol";
+import "flare-periphery/src/coston2/IFdcInflationConfigurations.sol";
+import "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 contract MockFdcHub is IFdcHub {
     function requestAttestation(bytes calldata _data) external payable {

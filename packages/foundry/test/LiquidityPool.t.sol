@@ -2,10 +2,10 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
-import "../src/LiquidityPool.sol";
-import "../src/BSDToken.sol";
-import "../src/mock/MockUSDT.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "../contracts/LiquidityPool.sol";
+import "../contracts/BSDToken.sol";
+import "../contracts/mock/MockUSDT.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract LiquidityPoolTest is Test {
     LiquidityPool public pool;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "dependencies/openzeppelin-contracts/contracts/interfaces/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
 import "./FlareDataRequest.sol";
 import "./StateConnector.sol";
 

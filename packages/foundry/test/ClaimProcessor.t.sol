@@ -2,9 +2,9 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "../src/ClaimProcessor.sol";
+import "../contracts/ClaimProcessor.sol";
 import "./mocks/MockBSDToken.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ClaimProcessorTest is Test {
     ClaimProcessor public claimProcessor;

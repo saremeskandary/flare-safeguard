@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import {Strings} from "@openzeppelin-contracts/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base} from "./Base.sol";
-import {IReferencedPaymentNonexistence} from "dependencies/flare-periphery-0.0.22/src/coston2/IReferencedPaymentNonexistence.sol";
+import {IReferencedPaymentNonexistence} from "flare-periphery/src/coston2/IReferencedPaymentNonexistence.sol";
 
 library FdcStrings {
     function toJsonString(

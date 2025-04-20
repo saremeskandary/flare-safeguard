@@ -3,8 +3,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 import "../contracts/InsuranceCore.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "dependencies/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract InsuranceCoreTest is Test {
     InsuranceCore public insuranceCore;

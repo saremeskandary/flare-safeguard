@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import "../contracts/flare/TokenRWA.sol";
 import "../contracts/flare/DataVerification.sol";
-import {IEVMTransaction} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
+import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 contract TokenRWATest is Test {
     TokenRWA public token;

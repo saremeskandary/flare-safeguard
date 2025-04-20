@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./interfaces/IFlareDataFetcher.sol";
-import "dependencies/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "dependencies/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract FlareDataFetcher is IFlareDataFetcher, Ownable, ReentrancyGuard {
     mapping(bytes32 => DataRequest) private requests;

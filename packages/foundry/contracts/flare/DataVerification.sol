@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "dependencies/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "dependencies/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcHub.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcVerification.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IFdcRequestFeeConfigurations.sol";
-import "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "flare-periphery/src/coston2/ContractRegistry.sol";
+import "flare-periphery/src/coston2/IFdcHub.sol";
+import "flare-periphery/src/coston2/IFdcVerification.sol";
+import "flare-periphery/src/coston2/IFdcRequestFeeConfigurations.sol";
+import "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 interface IFlareDataFetcher {
     function fetch(bytes32 requestId) external view returns (bytes memory);

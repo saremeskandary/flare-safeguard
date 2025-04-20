@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Script} from "dependencies/forge-std-1.9.5/src/Script.sol";
-import {console} from "dependencies/forge-std-1.9.5/src/console.sol";
-import { FAssetsSettings } from "../../src/fassets/FAssetsSettings.sol";
+import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
+import { FAssetsSettings } from "../../contracts/fassets/FAssetsSettings.sol";
 
 contract DeployAngGetFAssetsSettings is Script {
     // Address of the AssetManager contract on Songbird Testnet Coston

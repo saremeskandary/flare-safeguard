@@ -4,8 +4,8 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import "../contracts/flare/Vault.sol";
 import "../contracts/flare/DataVerification.sol";
-import "dependencies/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {IEVMTransaction} from "dependencies/flare-periphery-0.0.22/src/coston2/IEVMTransaction.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
 
 contract MockERC20 is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
