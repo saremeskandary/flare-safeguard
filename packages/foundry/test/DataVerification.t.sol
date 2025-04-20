@@ -15,13 +15,13 @@ contract MockFdcHub is IFdcHub {
         emit AttestationRequest(_data, msg.value);
     }
 
-    function requestsOffsetSeconds() external view returns (uint8) {
+    function requestsOffsetSeconds() external pure returns (uint8) {
         return 1;
     }
 
     function fdcInflationConfigurations()
         external
-        view
+        pure
         returns (IFdcInflationConfigurations)
     {
         return IFdcInflationConfigurations(address(0));
@@ -77,10 +77,7 @@ contract MockFdcVerification is IFdcVerification {
         return true;
     }
 
-    function verify(
-        bytes32 requestId,
-        bytes calldata proof
-    ) external pure returns (bool) {
+    function verify(bytes32, bytes calldata) external pure returns (bool) {
         return true;
     }
 }

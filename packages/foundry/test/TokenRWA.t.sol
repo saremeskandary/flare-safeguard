@@ -42,7 +42,7 @@ contract TokenRWATest is Test {
         vm.stopPrank();
     }
 
-    function test_Constructor() public {
+    function test_Constructor() public view {
         assertEq(token.name(), "Real World Asset");
         assertEq(token.symbol(), "RWA");
         assertEq(address(token.dataVerification()), address(dataVerification));
