@@ -1,6 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAccount } from "wagmi";
-import { notification } from "~~/components/scaffold-eth";
 
 interface ContractInteractionOptions {
   contractName: string;
@@ -11,12 +10,30 @@ interface ContractInteractionOptions {
 export const useContractInteraction = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { address } = useAccount();
+
+  // Clear messages after a delay
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (error || successMessage) {
+      timer = setTimeout(() => {
+        setError(null);
+        setSuccessMessage(null);
+      }, 5000); // Clear after 5 seconds
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [error, successMessage]);
 
   const readContract = useCallback(async ({ contractName, functionName, args = [] }: ContractInteractionOptions) => {
     try {
       setIsLoading(true);
       setError(null);
+      setSuccessMessage(null);
 
       const response = await fetch(`/api/contracts?contract=${contractName}&function=${functionName}&args=${JSON.stringify(args)}`);
       const data = await response.json();
@@ -29,7 +46,6 @@ export const useContractInteraction = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
-      notification.error(errorMessage);
       throw err;
     } finally {
       setIsLoading(false);
@@ -38,12 +54,15 @@ export const useContractInteraction = () => {
 
   const writeContract = useCallback(async ({ contractName, functionName, args = [] }: ContractInteractionOptions) => {
     if (!address) {
-      throw new Error("Please connect your wallet");
+      const errorMessage = "Please connect your wallet";
+      setError(errorMessage);
+      return null;
     }
 
     try {
       setIsLoading(true);
       setError(null);
+      setSuccessMessage(null);
 
       const response = await fetch("/api/contracts", {
         method: "POST",
@@ -63,12 +82,11 @@ export const useContractInteraction = () => {
         throw new Error(data.error || "Failed to write to contract");
       }
 
-      notification.success("Transaction successful!");
+      setSuccessMessage("Transaction successful!");
       return data.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
-      notification.error(errorMessage);
       throw err;
     } finally {
       setIsLoading(false);
@@ -80,5 +98,6 @@ export const useContractInteraction = () => {
     writeContract,
     isLoading,
     error,
+    successMessage,
   };
 }; 

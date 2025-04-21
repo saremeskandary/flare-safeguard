@@ -7,10 +7,11 @@ import { ContractDetails } from "./ContractDetails";
 import { InsuranceOptions } from "./InsuranceOptions";
 import { PolicyDetails } from "./PolicyDetails";
 import { ClaimHistory } from "./ClaimHistory";
+import { Notification } from "./Notification";
 
 export const Dashboard = () => {
     const { address } = useAccount();
-    const { isLoading } = useContractInteraction();
+    const { isLoading, error, successMessage } = useContractInteraction();
     const [selectedContract, setSelectedContract] = useState<string>("InsuranceCore");
     const [activeTab, setActiveTab] = useState<string>("browse");
 
@@ -42,6 +43,7 @@ export const Dashboard = () => {
 
     return (
         <div className="flex flex-col gap-6 p-6 bg-base-100">
+            <Notification error={error} successMessage={successMessage} />
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold text-base-content">Flare Safeguard Dashboard</h1>
                 {address && (
