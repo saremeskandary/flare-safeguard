@@ -44,16 +44,6 @@ export const Dashboard = () => {
     return (
         <div className="flex flex-col gap-6 p-6 bg-base-100">
             <Notification error={error} successMessage={successMessage} />
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold text-base-content">Flare Safeguard Dashboard</h1>
-                {address && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-base-content/60">Connected Wallet:</span>
-                        <Address address={address} />
-                    </div>
-                )}
-            </div>
-
             {/* Navigation Tabs */}
             <div className="flex border-b border-base-300">
                 <button

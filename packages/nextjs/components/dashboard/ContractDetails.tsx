@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
+import { AddressInput, IntegerInput, InputBase } from "~~/components/scaffold-eth";
 
 interface ContractDetailsProps {
     contractName: string;
@@ -10,6 +11,7 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
     const { readContract, writeContract, isLoading } = useContractInteraction();
     const [contractData, setContractData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [formData, setFormData] = useState<Record<string, any>>({});
 
     useEffect(() => {
         let mounted = true;
@@ -54,14 +56,23 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <h3 className="text-sm font-medium text-base-content/60">Contract Address</h3>
-                        <p className="mt-1 text-base-content">{contractData.address}</p>
+                        <AddressInput
+                            value={contractData.address}
+                            onChange={() => { }}
+                            disabled
+                            placeholder="Contract address"
+                        />
                     </div>
                     <div>
                         <h3 className="text-sm font-medium text-base-content/60">Owner</h3>
-                        <p className="mt-1 text-base-content">{contractData.owner}</p>
+                        <AddressInput
+                            value={contractData.owner}
+                            onChange={() => { }}
+                            disabled
+                            placeholder="Contract owner"
+                        />
                     </div>
                 </div>
-                {/* Add more contract-specific information here */}
             </div>
         );
     };
@@ -113,19 +124,37 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
                             {interaction.args.map(arg => (
                                 <div key={arg}>
                                     <label className="block text-sm font-medium text-base-content/60">{arg}</label>
-                                    <input
-                                        type="text"
-                                        name={arg}
-                                        className="mt-1 block w-full rounded-md border-base-300 bg-base-200 text-base-content shadow-sm focus:border-accent focus:ring-accent sm:text-sm"
-                                    />
+                                    {arg === "amount" ? (
+                                        <IntegerInput
+                                            name={arg}
+                                            value={formData[arg] || ""}
+                                            onChange={value => setFormData(prev => ({ ...prev, [arg]: value }))}
+                                            placeholder={`Enter ${arg}`}
+                                        />
+                                    ) : arg === "to" || arg === "spender" ? (
+                                        <AddressInput
+                                            name={arg}
+                                            value={formData[arg] || ""}
+                                            onChange={value => setFormData(prev => ({ ...prev, [arg]: value }))}
+                                            placeholder={`Enter ${arg} address`}
+                                        />
+                                    ) : (
+                                        <InputBase
+                                            name={arg}
+                                            value={formData[arg] || ""}
+                                            onChange={value => setFormData(prev => ({ ...prev, [arg]: value }))}
+                                            placeholder={`Enter ${arg}`}
+                                        />
+                                    )}
                                 </div>
                             ))}
                             <button
                                 type="submit"
-                                className="mt-2 inline-flex justify-center rounded-md border border-transparent bg-accent px-4 py-2 text-sm font-medium text-accent-content shadow-sm hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                                className="btn btn-secondary btn-sm"
                                 disabled={isLoading}
                             >
-                                {isLoading ? "Processing..." : "Submit"}
+                                {isLoading && <span className="loading loading-spinner loading-xs"></span>}
+                                Send 💸
                             </button>
                         </form>
                     </div>

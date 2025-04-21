@@ -111,7 +111,7 @@ export const InsuranceOptions = () => {
                                 <select
                                     value={duration}
                                     onChange={e => setDuration(Number(e.target.value))}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                    className="mt-1 p-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 >
                                     <option value={6}>6 months</option>
                                     <option value={12}>12 months</option>
