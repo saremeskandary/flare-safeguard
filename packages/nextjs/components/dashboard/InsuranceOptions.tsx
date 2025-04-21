@@ -82,7 +82,7 @@ export const InsuranceOptions = () => {
                 </div>
 
                 {selectedTokenData && (
-                    <div className="p-6 rounded-lg border border-gray-200">
+                    <div className="p-6 rounded-lg border border-gray-200 ">
                         <h3 className="text-lg font-semibold mb-4">Configure Your Insurance</h3>
 
                         <div className="space-y-4">
@@ -120,7 +120,7 @@ export const InsuranceOptions = () => {
                                 </select>
                             </div>
 
-                            <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="bg-base-200 p-4 rounded-lg">
                                 <h4 className="font-medium mb-2">Insurance Summary</h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                     <div>

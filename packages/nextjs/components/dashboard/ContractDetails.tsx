@@ -136,12 +136,12 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
 
     return (
         <div className="space-y-6">
-            <div className="p-6 rounded-lg border border-base-300 bg-base-200">
+            <div className="p-6 rounded-lg border border-base-300">
                 <h2 className="text-xl font-semibold mb-4 text-base-content">Contract Information</h2>
                 {renderContractInfo()}
             </div>
 
-            <div className="p-6 rounded-lg border border-base-300 bg-base-200">
+            <div className="p-6 rounded-lg border border-base-300">
                 <h2 className="text-xl font-semibold mb-4 text-base-content">Contract Interactions</h2>
                 {renderContractInteractions()}
             </div>
