@@ -1,0 +1,124 @@
+# Safeguard Insurance Platform Implementation Guide
+
+## Project Structure
+The project follows Scaffold-ETH 2 structure with additional components for insurance functionality:
+
+### Core Components
+- [app/page.tsx](mdc:app/page.tsx) - Main landing page
+- [components/dashboard/Dashboard.tsx](mdc:components/dashboard/Dashboard.tsx) - Main dashboard interface
+- [components/dashboard/PolicyDetails.tsx](mdc:components/dashboard/PolicyDetails.tsx) - Policy management
+- [components/dashboard/ClaimHistory.tsx](mdc:components/dashboard/ClaimHistory.tsx) - Claims view
+
+### Smart Contract Integration
+- [app/api/contracts/route.ts](mdc:app/api/contracts/route.ts) - Contract interaction endpoints
+
+### Required Implementations
+
+1. Database Integration
+```typescript
+// lib/db.ts - MongoDB integration
+import { MongoClient } from 'mongodb';
+
+const client = new MongoClient(process.env.MONGODB_URI);
+export const db = client.db('safeguard');
+```
+
+2. Policy API Routes
+```typescript
+// app/api/policies/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+
+export async function GET() {
+  const policies = await db.collection('policies').find().toArray();
+  return NextResponse.json(policies);
+}
+
+export async function POST(req: Request) {
+  const data = await req.json();
+  const result = await db.collection('policies').insertOne(data);
+  return NextResponse.json(result);
+}
+```
+
+3. IPFS Integration
+```typescript
+// lib/ipfs.ts
+import { Web3Storage } from 'web3.storage';
+
+const client = new Web3Storage({ token: process.env.WEB3_STORAGE_TOKEN });
+
+export async function storePolicy(policyData: any) {
+  // Implementation
+}
+```
+
+4. Policy Types
+```typescript
+// types/index.ts
+export interface Policy {
+  id: string;
+  holder: string;
+  coverageAmount: number;
+  premium: number;
+  startDate: Date;
+  endDate: Date;
+  status: 'active' | 'claimed' | 'expired';
+}
+
+export interface Claim {
+  id: string;
+  policyId: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  timestamp: Date;
+}
+```
+
+## Implementation Steps
+
+1. Database Setup
+- Create MongoDB connection
+- Set up collections for policies and claims
+- Implement data models
+
+2. API Routes
+- Policy management endpoints
+- Claim processing endpoints
+- User data endpoints
+
+## Testing Requirements
+
+1. Unit Tests
+- API endpoint testing
+- Component testing
+- Smart contract interaction testing
+
+2. Integration Tests
+- End-to-end policy flow
+- Claim processing flow
+- Database operations
+
+## Security Considerations
+
+1. Authentication
+- Wallet connection validation
+- API route protection
+- Rate limiting
+
+2. Data Validation
+- Input sanitization
+- Transaction verification
+- Policy status checks
+
+## Deployment Checklist
+
+1. Environment Setup
+- MongoDB connection string
+- IPFS configuration
+- Contract addresses
+
+2. Build Process
+- TypeScript compilation
+- Contract verification
+- Environment variable validation

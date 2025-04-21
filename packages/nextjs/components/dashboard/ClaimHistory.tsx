@@ -1,59 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
+import { useClaims } from "~~/hooks/useClaims";
 
 export const ClaimHistory = () => {
-    const { isLoading } = useContractInteraction();
-    const [claims, setClaims] = useState<any[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    const { claims, isLoading, error } = useClaims();
     const { resolvedTheme } = useTheme();
     const isDarkMode = resolvedTheme === "dark";
 
-    useEffect(() => {
-        const fetchClaims = async () => {
-            try {
-                // In a real implementation, this would fetch from the contract
-                // For now, we'll use mock data
-                const mockClaims = [
-                    {
-                        id: "CLM-001",
-                        policyId: "POL-001",
-                        tokenId: "REAL-ESTATE-001",
-                        tokenName: "Real Estate Project 001",
-                        claimAmount: 60000,
-                        claimDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-                        status: "Paid",
-                        payoutAmount: 60000,
-                        payoutDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-                        reason: "Default event detected due to significant value drop",
-                    },
-                    {
-                        id: "CLM-002",
-                        policyId: "POL-002",
-                        tokenId: "REAL-ESTATE-002",
-                        tokenName: "Real Estate Project 002",
-                        claimAmount: 45000,
-                        claimDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-                        status: "Processing",
-                        payoutAmount: null,
-                        payoutDate: null,
-                        reason: "Potential default event detected, under investigation",
-                    },
-                ];
-
-                setClaims(mockClaims);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to fetch claims");
-            }
-        };
-
-        fetchClaims();
-    }, []); // Empty dependency array since we're using mock data
-
     const formatDate = (date: Date | null) => {
         if (!date) return "N/A";
-        return date.toLocaleDateString("en-US", {
+        return new Date(date).toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
             day: "numeric",
@@ -63,19 +19,23 @@ export const ClaimHistory = () => {
     const getStatusStyles = (status: string) => {
         if (isDarkMode) {
             switch (status) {
-                case "Paid":
+                case "approved":
                     return "bg-emerald-900/50 text-emerald-300 ring-1 ring-emerald-500/30";
-                case "Processing":
+                case "pending":
                     return "bg-amber-900/50 text-amber-300 ring-1 ring-amber-500/30";
+                case "rejected":
+                    return "bg-red-900/50 text-red-300 ring-1 ring-red-500/30";
                 default:
                     return "bg-gray-800/50 text-gray-300 ring-1 ring-gray-500/30";
             }
         } else {
             switch (status) {
-                case "Paid":
+                case "approved":
                     return "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20";
-                case "Processing":
+                case "pending":
                     return "bg-amber-100 text-amber-800 ring-1 ring-amber-600/20";
+                case "rejected":
+                    return "bg-red-100 text-red-800 ring-1 ring-red-600/20";
                 default:
                     return "bg-gray-100 text-gray-800 ring-1 ring-gray-600/20";
             }
@@ -121,10 +81,8 @@ export const ClaimHistory = () => {
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 className="text-lg font-semibold text-base-content">{claim.tokenName}</h3>
+                                    <h3 className="text-lg font-semibold text-base-content">Claim #{claim.id}</h3>
                                     <div className="mt-1 flex items-center gap-3">
-                                        <p className="text-sm text-base-content/70">Claim ID: {claim.id}</p>
-                                        <span className="h-1 w-1 rounded-full bg-base-content/30"></span>
                                         <p className="text-sm text-base-content/70">Policy ID: {claim.policyId}</p>
                                     </div>
                                 </div>
@@ -137,33 +95,33 @@ export const ClaimHistory = () => {
                                 <div className="space-y-4">
                                     <div className="bg-base-300/50 p-4 rounded-lg">
                                         <h4 className="text-sm font-medium text-base-content/80 mb-1">Claim Amount</h4>
-                                        <p className="text-lg font-semibold text-base-content">${claim.claimAmount.toLocaleString()}</p>
+                                        <p className="text-lg font-semibold text-base-content">${claim.amount.toLocaleString()}</p>
                                     </div>
                                     <div className="bg-base-300/50 p-4 rounded-lg">
                                         <h4 className="text-sm font-medium text-base-content/80 mb-1">Claim Date</h4>
-                                        <p className="text-lg font-semibold text-base-content">{formatDate(claim.claimDate)}</p>
+                                        <p className="text-lg font-semibold text-base-content">{formatDate(claim.timestamp)}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    {claim.payoutAmount && (
+                                    {claim.processedAt && (
                                         <div className="bg-base-300/50 p-4 rounded-lg">
-                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Payout Amount</h4>
-                                            <p className="text-lg font-semibold text-base-content">${claim.payoutAmount.toLocaleString()}</p>
+                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Processed Date</h4>
+                                            <p className="text-lg font-semibold text-base-content">{formatDate(claim.processedAt)}</p>
                                         </div>
                                     )}
-                                    {claim.payoutDate && (
+                                    {claim.processedBy && (
                                         <div className="bg-base-300/50 p-4 rounded-lg">
-                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Payout Date</h4>
-                                            <p className="text-lg font-semibold text-base-content">{formatDate(claim.payoutDate)}</p>
+                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Processed By</h4>
+                                            <p className="text-lg font-semibold text-base-content">{claim.processedBy}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div className="mt-6 p-4 bg-base-300/50 rounded-lg">
-                                <h4 className="text-sm font-medium text-base-content/80 mb-2">Reason for Claim</h4>
-                                <p className="text-sm text-base-content/90">{claim.reason}</p>
+                                <h4 className="text-sm font-medium text-base-content/80 mb-2">Description</h4>
+                                <p className="text-sm text-base-content/90">{claim.description}</p>
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-gray-100">

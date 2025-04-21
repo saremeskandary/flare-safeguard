@@ -90,7 +90,7 @@ export const InsuranceOptions = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Coverage Amount (%)
                                 </label>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 max-w-40">
                                     <input
                                         type="range"
                                         min="50"
@@ -111,7 +111,7 @@ export const InsuranceOptions = () => {
                                 <select
                                     value={duration}
                                     onChange={e => setDuration(Number(e.target.value))}
-                                    className="mt-1 p-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                    className="max-w-40 mt-1 p-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 >
                                     <option value={6}>6 months</option>
                                     <option value={12}>12 months</option>
