@@ -2,48 +2,77 @@
 
 import { useState, useEffect } from "react";
 import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
+import { usePolicies } from "~~/hooks/usePolicies";
 
 export const PolicyDetails = () => {
-    const { isLoading } = useContractInteraction();
-    const [policies, setPolicies] = useState<any[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    const { policies, isLoading, error } = usePolicies();
+    const { readContract, isLoading: contractLoading } = useContractInteraction();
+    const [policiesFromContract, setPoliciesFromContract] = useState<any[]>([]);
+    const [errorFromContract, setErrorFromContract] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchPolicies = async () => {
+        const fetchPoliciesFromContract = async () => {
             try {
-                // In a real implementation, this would fetch from the contract
-                // For now, we'll use mock data
-                const mockPolicies = [
-                    {
-                        id: "POL-001",
-                        tokenId: "REAL-ESTATE-001",
-                        tokenName: "Real Estate Project 001",
-                        coverageAmount: 75000,
-                        premiumAmount: 1875,
-                        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-                        endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000), // 335 days from now
-                        status: "Active",
-                    },
-                    {
-                        id: "POL-002",
-                        tokenId: "REAL-ESTATE-002",
-                        tokenName: "Real Estate Project 002",
-                        coverageAmount: 112500,
-                        premiumAmount: 3375,
-                        startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
-                        endDate: new Date(Date.now() + 305 * 24 * 60 * 60 * 1000), // 305 days from now
-                        status: "Active",
-                    },
-                ];
+                // Fetch policies from the ClaimProcessor contract
+                const userAddress = "0x248dcc886995dd097Dc47b8561584D6479cF7772"; // This should be the connected user's address
 
-                setPolicies(mockPolicies);
+                // Get user's claims from the contract
+                const userClaimsResult = await readContract({
+                    contractName: "ClaimProcessor",
+                    functionName: "getUserClaims",
+                    args: [userAddress],
+                });
+
+                // Ensure userClaims is an array
+                const userClaims = Array.isArray(userClaimsResult) ? userClaimsResult : [];
+
+                if (userClaims.length === 0) {
+                    setPoliciesFromContract([]);
+                    return;
+                }
+
+                // Fetch policy details for each claim
+                const policyPromises = userClaims.map(async (claimId: number) => {
+                    const claim = await readContract({
+                        contractName: "ClaimProcessor",
+                        functionName: "getClaim",
+                        args: [claimId],
+                    });
+
+                    if (!claim) return null;
+
+                    const policy = await readContract({
+                        contractName: "ClaimProcessor",
+                        functionName: "getPolicy",
+                        args: [claim.insured],
+                    });
+
+                    if (!policy) return null;
+
+                    return {
+                        id: `POL-${claimId}`,
+                        tokenId: policy.tokenAddress,
+                        tokenName: `Policy for ${policy.tokenAddress.substring(0, 6)}...${policy.tokenAddress.substring(policy.tokenAddress.length - 4)}`,
+                        coverageAmount: policy.coverageAmount,
+                        premiumAmount: policy.premium,
+                        startDate: new Date(Number(policy.startTime) * 1000),
+                        endDate: new Date(Number(policy.endTime) * 1000),
+                        status: policy.isActive ? "Active" : "Expired",
+                    };
+                });
+
+                const resolvedPolicies = await Promise.all(policyPromises);
+                const validPolicies = resolvedPolicies.filter(policy => policy !== null);
+
+                setPoliciesFromContract(validPolicies);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to fetch policies");
+                console.error("Error fetching policies from contract:", err);
+                setErrorFromContract(err instanceof Error ? err.message : "Failed to fetch policies from contract");
             }
         };
 
-        fetchPolicies();
-    }, []);
+        fetchPoliciesFromContract();
+    }, [readContract]);
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString("en-US", {
@@ -54,34 +83,42 @@ export const PolicyDetails = () => {
     };
 
     const calculateRemainingDays = (endDate: Date) => {
-        const now = new Date();
-        const diffTime = endDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
+        try {
+            const now = new Date();
+            const diffTime = endDate.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        } catch (error) {
+            console.error('Error calculating remaining days:', error);
+            return 0;
+        }
     };
 
-    if (error) {
+    if (isLoading || contractLoading) {
         return (
-            <div className="p-6 rounded-lg border border-red-200 bg-red-50">
-                <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
-                <p className="text-red-600">{error}</p>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="p-6 rounded-lg border border-gray-200 flex justify-center items-center h-40">
+            <div className="p-6 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
     }
 
-    if (policies.length === 0) {
+    if (error || errorFromContract) {
         return (
-            <div className="p-6 rounded-lg border border-gray-200">
-                <h2 className="text-xl font-semibold mb-4">My Policies</h2>
-                <p className="text-gray-500">You don&apos;t have any active insurance policies.</p>
+            <div className="p-6 rounded-xl border border-red-200 bg-red-50/50 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
+                <p className="text-red-600">{error || errorFromContract}</p>
+            </div>
+        );
+    }
+
+    // Combine policies from database and contract
+    const allPolicies = [...policies, ...policiesFromContract];
+
+    if (allPolicies.length === 0) {
+        return (
+            <div className="p-8 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">Your Policies</h2>
+                <p className="text-gray-500">You don&apos;t have any insurance policies.</p>
             </div>
         );
     }
@@ -89,11 +126,11 @@ export const PolicyDetails = () => {
     return (
         <div className="space-y-6">
             <div className="p-6 rounded-lg border border-gray-200">
-                <h2 className="text-xl font-semibold mb-4">My Policies</h2>
+                <h2 className="text-xl font-semibold mb-6">My Policies</h2>
 
-                <div className="space-y-4">
-                    {policies.map(policy => (
-                        <div key={policy.id} className="p-4 rounded-lg border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allPolicies.map(policy => (
+                        <div key={policy.id} className="p-4 rounded-lg border border-gray-200 max-w-96">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 className="font-semibold">{policy.tokenName}</h3>
@@ -105,29 +142,26 @@ export const PolicyDetails = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Coverage Amount</h4>
-                                    <p className="mt-1">${policy.coverageAmount.toLocaleString()}</p>
+                                    <p className="mt-1">${policy.coverageAmount?.toLocaleString() || '0'}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Premium Amount</h4>
-                                    <p className="mt-1">${policy.premiumAmount.toLocaleString()}</p>
+                                    <p className="mt-1">${policy.premiumAmount?.toLocaleString() || '0'}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Remaining Days</h4>
-                                    <p className="mt-1">{calculateRemainingDays(policy.endDate)} days</p>
+                                    <p className="mt-1">{calculateRemainingDays(new Date(policy.endDate))} days</p>
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
-                                    <p className="mt-1">{formatDate(policy.startDate)}</p>
+                                    <p className="mt-1">{formatDate(new Date(policy.startDate))}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">End Date</h4>
-                                    <p className="mt-1">{formatDate(policy.endDate)}</p>
+                                    <p className="mt-1">{formatDate(new Date(policy.endDate))}</p>
                                 </div>
                             </div>
 
@@ -139,7 +173,7 @@ export const PolicyDetails = () => {
                                             <div
                                                 className="bg-primary h-2.5 rounded-full"
                                                 style={{
-                                                    width: `${Math.min(100, Math.max(0, (1 - calculateRemainingDays(policy.endDate) / 365) * 100))}%`
+                                                    width: `${Math.min(100, Math.max(0, (1 - calculateRemainingDays(new Date(policy.endDate)) / 365) * 100))}%`
                                                 }}
                                             ></div>
                                         </div>

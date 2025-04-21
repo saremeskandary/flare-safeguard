@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useAccount } from "wagmi";
 import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
-import { Address } from "~~/components/scaffold-eth";
 import { ContractDetails } from "./ContractDetails";
 import { InsuranceOptions } from "./InsuranceOptions";
 import { PolicyDetails } from "./PolicyDetails";
@@ -10,7 +8,6 @@ import { ClaimHistory } from "./ClaimHistory";
 import { Notification } from "./Notification";
 
 export const Dashboard = () => {
-    const { address } = useAccount();
     const { isLoading, error, successMessage } = useContractInteraction();
     const [selectedContract, setSelectedContract] = useState<string>("InsuranceCore");
     const [activeTab, setActiveTab] = useState<string>("browse");

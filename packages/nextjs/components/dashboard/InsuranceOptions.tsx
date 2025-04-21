@@ -1,37 +1,43 @@
 "use client";
 import { useState } from "react";
 import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
+import { useInsuranceOptions } from "~~/hooks/useInsuranceOptions";
 
 export const InsuranceOptions = () => {
     const { writeContract, isLoading } = useContractInteraction();
+    const { options, isLoading: insuranceOptionsLoading, error } = useInsuranceOptions();
     const [selectedToken, setSelectedToken] = useState<string>("REAL-ESTATE-001");
     const [coverageAmount, setCoverageAmount] = useState<number>(75);
     const [duration, setDuration] = useState<number>(12);
 
-    // Mock data for available tokens
-    const availableTokens = [
-        {
-            id: "REAL-ESTATE-001",
-            name: "Real Estate Project 001",
-            value: 100000,
-            premiumRate: 2.5,
-            description: "A real estate project token representing a commercial property in New York.",
-        },
-        {
-            id: "REAL-ESTATE-002",
-            name: "Real Estate Project 002",
-            value: 150000,
-            premiumRate: 3.0,
-            description: "A real estate project token representing a residential complex in London.",
-        },
-        {
-            id: "REAL-ESTATE-003",
-            name: "Real Estate Project 003",
-            value: 200000,
-            premiumRate: 2.8,
-            description: "A real estate project token representing a mixed-use development in Singapore.",
-        },
-    ];
+    if (insuranceOptionsLoading) {
+        return (
+            <div className="p-6 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 rounded-xl border border-red-200 bg-red-50/50 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
+                <p className="text-red-600">{error}</p>
+            </div>
+        );
+    }
+
+    if (options.length === 0) {
+        return (
+            <div className="p-8 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">Insurance Options</h2>
+                <p className="text-gray-500">No insurance options available.</p>
+            </div>
+        );
+    }
+
+    // Use the options from the database instead of mock data
+    const availableTokens = options;
 
     const selectedTokenData = availableTokens.find(token => token.id === selectedToken);
     const premiumAmount = selectedTokenData

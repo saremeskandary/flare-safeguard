@@ -44,7 +44,7 @@ export const ClaimHistory = () => {
 
     if (error) {
         return (
-            <div className="p-6 rounded-xl border border-red-200 bg-red-50/50 backdrop-blur-sm shadow-sm">
+            <div className="p-6 rounded-xl border border-red-200 backdrop-blur-sm shadow-sm">
                 <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
                 <p className="text-red-600">{error}</p>
             </div>

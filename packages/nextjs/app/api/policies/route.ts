@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { storePolicy } from '~~/lib/ipfs';
 import { Policy } from '~~/types';
-import { getDb } from '~~/lib/db';
+import { getDb } from '~~/lib/db-commonjs.js';
 
 export async function GET() {
   try {

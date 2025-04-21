@@ -3,23 +3,19 @@ const { MongoClient } = require('mongodb');
 const uri = process.env.MONGODB_URI || 'mongodb://admin:password@localhost:27017/safeguard?authSource=admin';
 const options = {};
 
-let client: any;
-let clientPromise: Promise<any>;
-
-interface GlobalWithMongo {
-  _mongoClientPromise?: Promise<any>;
-}
+let client;
+let clientPromise;
 
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as unknown as GlobalWithMongo;
+  let globalWithMongo = global;
 
   if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri, options);
     globalWithMongo._mongoClientPromise = client.connect();
   }
-  clientPromise = globalWithMongo._mongoClientPromise!;
+  clientPromise = globalWithMongo._mongoClientPromise;
 } else {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);
@@ -33,7 +29,6 @@ const getDb = async () => {
   return client.db('safeguard');
 };
 
-// Export the functions
 module.exports = {
   clientPromise,
   getDb

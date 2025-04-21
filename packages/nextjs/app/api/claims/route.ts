@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '~~/lib/db';
 import { storePolicy } from '~~/lib/ipfs';
 import { Claim } from '~~/types';
+import { getDb } from '~~/lib/db-commonjs.js';
 
 export async function GET() {
   try {
