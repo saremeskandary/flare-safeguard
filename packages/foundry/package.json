@@ -16,7 +16,8 @@
     "postinstall": "shx cp -n .env.example .env",
     "lint": "make lint",
     "test": "forge test",
-    "verify": "make verify RPC_URL=${1:-localhost}"
+    "verify": "make verify RPC_URL=${1:-localhost}",
+    "seed": "forge script script/SeedContracts.s.sol:SeedContracts --rpc-url http://localhost:8545 --broadcast --verify -vvvv"
   },
   "dependencies": {
     "dotenv": "~16.3.1",

@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     MockBSDToken: {
-      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
+      address: "0x82c6d3ed4cd33d8ec1e51d0b5cc1d822eaa0c3dc",
       abi: [
         {
           type: "constructor",
@@ -342,11 +342,11 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745263740.json",
+      deploymentFile: "run-1745275850.json",
       deploymentScript: "Deploy.s.sol",
     },
     ClaimProcessor: {
-      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
+      address: "0x05b4cb126885fb10464fdd12666feb25e2563b76",
       abi: [
         {
           type: "constructor",
@@ -1063,7 +1063,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745263740.json",
+      deploymentFile: "run-1745275850.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

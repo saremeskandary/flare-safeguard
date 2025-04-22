@@ -26,6 +26,9 @@ scrollSepolia = "https://sepolia-rpc.scroll.io"
 scroll = "https://rpc.scroll.io"
 pgn = "https://rpc.publicgoods.network"
 pgnTestnet = "https://sepolia.publicgoods.network"
+coston2 = "https://coston2.enosys.global/ext/C/rpc"
+songbird = { key = "X", chain = 16, url = "${SONGBIRD_RPC_URL}" }
+flare = { key = "X", chain = 16, url = "${FLARE_RPC_URL}" }
 
 
 localhost = "http://127.0.0.1:8545"
@@ -35,15 +38,12 @@ polygonMumbai = { key = "${ETHERSCAN_API_KEY}" }
 sepolia = { key = "${ETHERSCAN_API_KEY}" }
 
 
-
 [fmt]
 line_length = 120
 tab_width = 4
 quote_style = "double"
 bracket_spacing = true
 int_types = "long"
-
-
 
 
 # See more config options https://book.getfoundry.sh/reference/config/overview
