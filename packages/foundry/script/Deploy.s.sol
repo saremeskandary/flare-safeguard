@@ -1,25 +1,25 @@
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0 <0.9.0;
 
+import "forge-std/Script.sol";
+import "./DeployInsuranceCore.s.sol";
 import "./DeployHelpers.s.sol";
 import { DeployClaimProcessor } from "./DeployClaimProcessor.s.sol";
-
 /**
  * @notice Main deployment script for all contracts
  * @dev Run this when you want to deploy multiple contracts at once
  *
  * Example: yarn deploy # runs this script(without`--file` flag)
  */
-contract DeployScript is ScaffoldETHDeploy {
+contract Deploy is Script {
     function run() external {
-        // Deploys all your contracts sequentially
-        // Add new deployments here when needed
+        // Deploy InsuranceCore
+        DeployInsuranceCore deployer = new DeployInsuranceCore();
+        address insuranceCoreAddress = deployer.run();
 
-        DeployClaimProcessor deployClaimProcessor = new DeployClaimProcessor();
-        deployClaimProcessor.run();
-
-        // Deploy another contract
-        // DeployMyContract myContract = new DeployMyContract();
-        // myContract.run();
+        console.log(
+            "Deployment completed. InsuranceCore address:",
+            insuranceCoreAddress
+        );
     }
 }
