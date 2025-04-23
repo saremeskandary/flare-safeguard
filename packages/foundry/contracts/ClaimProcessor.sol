@@ -197,19 +197,26 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
 
         InsurancePolicy memory policy = policies[claim.insured];
         require(policy.isActive, "Policy not active");
-        require(
-            claim.amount <= policy.coverageAmount,
-            "Amount exceeds coverage"
-        );
+        require(block.timestamp <= policy.endTime, "Policy expired");
 
-        // Transfer payout
+        // Transfer the claim amount to the insured
         require(
             bsdToken.transfer(claim.insured, claim.amount),
-            "Payout transfer failed"
+            "Transfer failed"
         );
 
         claim.status = ClaimStatus.Paid;
         emit ClaimPaid(claimId, claim.insured, claim.amount);
+    }
+
+    /**
+     * @dev Public function to process claim payout
+     * @param claimId ID of the claim
+     */
+    function processClaimPayout(
+        uint256 claimId
+    ) external onlyRole(ADMIN_ROLE) nonReentrant {
+        processPayout(claimId);
     }
 
     /**

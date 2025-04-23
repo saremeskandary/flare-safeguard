@@ -209,21 +209,11 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
 
     /**
      * @dev Internal function to handle policy creation messages
-     * @param message The message containing policy creation data
      * @return success Whether the policy was created successfully
      */
     function _handlePolicyCreation(
-        Message memory message
-    ) internal returns (bool success) {
-        // Decode policy creation data
-        (
-            address tokenAddress,
-            uint256 coverageAmount,
-            uint256 premium,
-            uint256 duration
-        ) = abi.decode(message.data, (address, uint256, uint256, uint256));
-
-        // Create policy on this chain
+        Message memory
+    ) internal pure returns (bool success) {
         // Note: This would need to be implemented based on the specific requirements
         // For now, we'll just return true as a placeholder
         return true;
@@ -253,7 +243,7 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
                 chainId,
                 requiredConfirmations
             )
-        returns (uint256 claimId) {
+        returns (uint256) {
             return true;
         } catch {
             return false;
@@ -262,19 +252,11 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
 
     /**
      * @dev Internal function to handle claim verification messages
-     * @param message The message containing claim verification data
      * @return success Whether the claim was verified successfully
      */
     function _handleClaimVerification(
-        Message memory message
-    ) internal returns (bool success) {
-        // Decode claim verification data
-        (uint256 claimId, bytes memory proofData) = abi.decode(
-            message.data,
-            (uint256, bytes)
-        );
-
-        // Verify claim on this chain
+        Message memory
+    ) internal pure returns (bool success) {
         // Note: This would need to be implemented based on the specific requirements
         // For now, we'll just return true as a placeholder
         return true;

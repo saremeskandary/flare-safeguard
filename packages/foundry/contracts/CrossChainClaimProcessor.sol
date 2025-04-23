@@ -150,6 +150,12 @@ contract CrossChainClaimProcessor is ClaimProcessor {
             "Transaction hash mismatch"
         );
 
+        // Verify required confirmations
+        require(
+            _proof.data.requestBody.requiredConfirmations >= requiredConfirmations,
+            "Insufficient confirmations"
+        );
+
         // Verify the transaction proof using FDC
         require(
             fdcTransferEventListener.isEVMTransactionProofValid(_proof),

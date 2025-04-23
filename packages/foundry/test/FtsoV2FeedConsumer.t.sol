@@ -28,89 +28,72 @@ contract MockFtsoV2Interface is FtsoV2Interface {
         return (_feedValue, _decimals, _timestamp);
     }
 
-    // Implement other required functions from the interface
-    function getFeed(bytes21) external pure returns (uint256, int8, uint64) {
-        revert("Not implemented");
-    }
-
-    function getFeedByName(
-        string memory
-    ) external pure returns (uint256, int8, uint64) {
-        revert("Not implemented");
-    }
-
-    function getFeedIdByName(string memory) external pure returns (bytes21) {
-        revert("Not implemented");
-    }
-
-    function getFeedIds() external pure returns (bytes21[] memory) {
-        revert("Not implemented");
-    }
-
-    function getFeedNames() external pure returns (string[] memory) {
-        revert("Not implemented");
-    }
-
-    function getFeedDecimals(bytes21) external pure returns (int8) {
-        revert("Not implemented");
-    }
-
-    function getFeedDecimalsByName(string memory) external pure returns (int8) {
-        revert("Not implemented");
-    }
-
-    function getFeedTimestamp(bytes21) external pure returns (uint64) {
-        revert("Not implemented");
-    }
-
-    function getFeedTimestampByName(
-        string memory
-    ) external pure returns (uint64) {
-        revert("Not implemented");
-    }
-
-    function getFeedValue(bytes21) external pure returns (uint256) {
-        revert("Not implemented");
-    }
-
-    function getFeedValueByName(string memory) external pure returns (uint256) {
-        revert("Not implemented");
-    }
-
-    function getFeedValueWithDecimals(
+    function getFeedByIdInWei(
         bytes21
-    ) external pure returns (uint256, int8) {
-        revert("Not implemented");
+    ) external payable returns (uint256, uint64) {
+        return (_feedValue, _timestamp);
     }
 
-    function getFeedValueWithDecimalsByName(
-        string memory
-    ) external pure returns (uint256, int8) {
-        revert("Not implemented");
+    function getFeedByIndex(
+        uint256
+    ) external payable returns (uint256, int8, uint64) {
+        return (_feedValue, _decimals, _timestamp);
     }
 
-    function getFeedValueWithTimestamp(
-        bytes21
-    ) external pure returns (uint256, uint64) {
-        revert("Not implemented");
+    function getFeedByIndexInWei(
+        uint256
+    ) external payable returns (uint256, uint64) {
+        return (_feedValue, _timestamp);
     }
 
-    function getFeedValueWithTimestampByName(
-        string memory
-    ) external pure returns (uint256, uint64) {
-        revert("Not implemented");
+    function getFeedId(uint256) external view returns (bytes21) {
+        return bytes21(uint168(0x123456789012345678901234567890123456789012));
     }
 
-    function getFeedValueWithTimestampAndDecimals(
-        bytes21
-    ) external pure returns (uint256, uint64, int8) {
-        revert("Not implemented");
+    function getFeedIndex(bytes21) external view returns (uint256) {
+        return 0;
     }
 
-    function getFeedValueWithTimestampAndDecimalsByName(
-        string memory
-    ) external pure returns (uint256, uint64, int8) {
-        revert("Not implemented");
+    function getFeedsById(
+        bytes21[] calldata
+    ) external payable returns (uint256[] memory, int8[] memory, uint64) {
+        uint256[] memory values = new uint256[](1);
+        int8[] memory decimals = new int8[](1);
+        values[0] = _feedValue;
+        decimals[0] = _decimals;
+        return (values, decimals, _timestamp);
+    }
+
+    function getFeedsByIdInWei(
+        bytes21[] calldata
+    ) external payable returns (uint256[] memory, uint64) {
+        uint256[] memory values = new uint256[](1);
+        values[0] = _feedValue;
+        return (values, _timestamp);
+    }
+
+    function getFeedsByIndex(
+        uint256[] calldata
+    ) external payable returns (uint256[] memory, int8[] memory, uint64) {
+        uint256[] memory values = new uint256[](1);
+        int8[] memory decimals = new int8[](1);
+        values[0] = _feedValue;
+        decimals[0] = _decimals;
+        return (values, decimals, _timestamp);
+    }
+
+    function getFeedsByIndexInWei(
+        uint256[] calldata
+    ) external payable returns (uint256[] memory, uint64) {
+        uint256[] memory values = new uint256[](1);
+        values[0] = _feedValue;
+        return (values, _timestamp);
+    }
+
+    function verifyFeedData(
+        FeedDataWithProof calldata
+    ) external view returns (bool) {
+        return true;
     }
 }
 
@@ -130,16 +113,22 @@ contract MockFeeCalculator is IFeeCalculator {
 
     function calculateFeeByNames(
         string[] memory
-    ) external pure returns (uint256) {
-        revert("Not implemented");
+    ) external view returns (uint256) {
+        return _fee;
     }
 
-    function calculateFeeById(bytes21) external pure returns (uint256) {
-        revert("Not implemented");
+    function calculateFeeById(bytes21) external view returns (uint256) {
+        return _fee;
     }
 
-    function calculateFeeByName(string memory) external pure returns (uint256) {
-        revert("Not implemented");
+    function calculateFeeByName(string memory) external view returns (uint256) {
+        return _fee;
+    }
+
+    function calculateFeeByIndices(
+        uint256[] memory
+    ) external view returns (uint256) {
+        return _fee;
     }
 }
 

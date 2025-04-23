@@ -144,7 +144,8 @@ contract SeedContracts is ScaffoldETHDeploy {
         console.log("Approved claim for policy 1");
 
         // Process payout for the claim
-        claimProcessor.processPayout(0);
+        vm.prank(deployer);
+        claimProcessor.processClaimPayout(0);
 
         console.log("Processed payout for claim 0");
 
@@ -167,7 +168,8 @@ contract SeedContracts is ScaffoldETHDeploy {
         console.log("Approved claim for policy 1");
 
         // Process payout for the claim
-        claimProcessor.processPayout(1);
+        vm.prank(deployer);
+        claimProcessor.processClaimPayout(1);
 
         console.log("Processed payout for claim 1");
 

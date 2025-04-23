@@ -22,12 +22,13 @@ contract SafeguardMessageReceiverTest is Test {
     uint256 public constant COVERAGE_AMOUNT = 1000 ether;
     uint256 public constant PREMIUM = 100 ether;
     uint256 public constant DURATION = 30 days;
+    uint256 public targetChain = 2; // Default target chain ID for tests
 
     event MessageReceived(
         uint256 indexed messageId,
         ISafeguardMessageReceiver.MessageType indexed messageType,
         address indexed sender,
-        uint256 targetChainId,
+        uint256 targetChain,
         bytes encodedData
     );
 
@@ -79,26 +80,23 @@ contract SafeguardMessageReceiverTest is Test {
     }
 
     function testReceiveMessage() public {
-        bytes memory encodedData = abi.encode(
-            user,
-            COVERAGE_AMOUNT,
-            PREMIUM,
-            DURATION
-        );
+        sender = address(0x123);
+        targetChain = 2; // Example target chain ID
+        bytes memory encodedData = abi.encode("test data");
 
         vm.expectEmit(true, true, true, true);
         emit MessageReceived(
             1,
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
-            block.chainid,
+            targetChain,
             encodedData
         );
 
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
-            block.chainid,
+            targetChain,
             encodedData
         );
 
@@ -109,8 +107,8 @@ contract SafeguardMessageReceiverTest is Test {
             uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
         );
         assertEq(message.sender, sender);
-        assertEq(message.targetChainId, block.chainid);
-        assertEq(message.encodedData, encodedData);
+        assertEq(message.targetChain, targetChain);
+        assertEq(message.data, encodedData);
     }
 
     function testProcessPolicyCreationMessage() public {
@@ -124,7 +122,7 @@ contract SafeguardMessageReceiverTest is Test {
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
-            block.chainid,
+            targetChain,
             encodedData
         );
 
@@ -151,7 +149,7 @@ contract SafeguardMessageReceiverTest is Test {
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
-            block.chainid,
+            targetChain,
             policyData
         );
 
@@ -168,7 +166,7 @@ contract SafeguardMessageReceiverTest is Test {
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.ClaimSubmission,
             sender,
-            block.chainid,
+            targetChain,
             claimData
         );
 
@@ -195,7 +193,7 @@ contract SafeguardMessageReceiverTest is Test {
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
-            block.chainid,
+            targetChain,
             policyData
         );
 
@@ -283,7 +281,7 @@ contract SafeguardMessageReceiverTest is Test {
                 block.chainid
             );
         assertEq(chainMessages.length, 1);
-        assertEq(chainMessages[0].targetChainId, block.chainid);
+        assertEq(chainMessages[0].targetChain, block.chainid);
     }
 
     function testFailProcessMessageWithoutAdminRole() public {
@@ -310,5 +308,133 @@ contract SafeguardMessageReceiverTest is Test {
         vm.prank(admin);
         vm.expectRevert("Message does not exist");
         messageReceiver.processMessage(999);
+    }
+
+    function testReceiveMessageWithInvalidSender() public {
+        sender = address(0);
+        targetChain = 2; // Example target chain ID
+        bytes memory encodedData = abi.encode("test data");
+
+        vm.expectEmit(true, true, true, true);
+        emit MessageReceived(
+            1,
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        messageReceiver.receiveMessage(
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(1);
+        assertEq(
+            uint256(message.messageType),
+            uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
+        );
+        assertEq(message.sender, sender);
+        assertEq(message.targetChain, targetChain);
+        assertEq(message.data, encodedData);
+    }
+
+    function testReceiveMessageWithInvalidData() public {
+        sender = address(0x123);
+        targetChain = 2; // Example target chain ID
+        bytes memory encodedData = "";
+
+        vm.expectEmit(true, true, true, true);
+        emit MessageReceived(
+            1,
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        messageReceiver.receiveMessage(
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(1);
+        assertEq(
+            uint256(message.messageType),
+            uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
+        );
+        assertEq(message.sender, sender);
+        assertEq(message.targetChain, targetChain);
+        assertEq(message.data, encodedData);
+    }
+
+    function testReceiveMessageWithInvalidTargetChain() public {
+        sender = address(0x123);
+        targetChain = 0; // Invalid target chain ID
+        bytes memory encodedData = abi.encode("test data");
+
+        vm.expectEmit(true, true, true, true);
+        emit MessageReceived(
+            1,
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        messageReceiver.receiveMessage(
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(1);
+        assertEq(
+            uint256(message.messageType),
+            uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
+        );
+        assertEq(message.sender, sender);
+        assertEq(message.targetChain, targetChain);
+        assertEq(message.data, encodedData);
+    }
+
+    function testReceiveMessageWithInvalidEncodedData() public {
+        sender = address(0x123);
+        targetChain = 2; // Example target chain ID
+        bytes memory encodedData = abi.encode("invalid data");
+
+        vm.expectEmit(true, true, true, true);
+        emit MessageReceived(
+            1,
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        messageReceiver.receiveMessage(
+            ISafeguardMessageReceiver.MessageType.PolicyCreation,
+            sender,
+            targetChain,
+            encodedData
+        );
+
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(1);
+        assertEq(
+            uint256(message.messageType),
+            uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
+        );
+        assertEq(message.sender, sender);
+        assertEq(message.targetChain, targetChain);
+        assertEq(message.data, encodedData);
     }
 }

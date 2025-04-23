@@ -224,12 +224,12 @@ contract ClaimProcessorTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit ClaimPaid(0, user, 500 ether);
-        claimProcessor.processPayout(0);
+        claimProcessor.processClaimPayout(0);
     }
 
     function test_RevertWhen_ProcessPayoutForUnapprovedClaim() public {
         vm.prank(address(this));
         vm.expectRevert("Claim not approved");
-        claimProcessor.processPayout(0);
+        claimProcessor.processClaimPayout(0);
     }
 }
