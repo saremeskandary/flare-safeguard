@@ -1,28 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
 import { usePolicies } from "~~/hooks/usePolicies";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useAccount } from "wagmi";
 
 export const PolicyDetails = () => {
     const { policies, isLoading, error } = usePolicies();
-    const { readContract, isLoading: contractLoading } = useContractInteraction();
     const [policiesFromContract, setPoliciesFromContract] = useState<any[]>([]);
     const [errorFromContract, setErrorFromContract] = useState<string | null>(null);
+    const [contractLoading, setContractLoading] = useState<boolean>(false);
+    const { address } = useAccount();
+    const { data: userClaimsResult, isLoading: isClaimsLoading } = useScaffoldReadContract({
+        contractName: "ClaimProcessor",
+        functionName: "getUserClaims",
+        args: [address], // This should be the connected user's address
+    });
 
     useEffect(() => {
         const fetchPoliciesFromContract = async () => {
             try {
-                // Fetch policies from the ClaimProcessor contract
-                const userAddress = "0x248dcc886995dd097Dc47b8561584D6479cF7772"; // This should be the connected user's address
-
-                // Get user's claims from the contract
-                const userClaimsResult = await readContract({
-                    contractName: "ClaimProcessor",
-                    functionName: "getUserClaims",
-                    args: [userAddress],
-                });
-
+                setContractLoading(true);
                 // Ensure userClaims is an array
                 const userClaims = Array.isArray(userClaimsResult) ? userClaimsResult : [];
 
@@ -32,32 +30,36 @@ export const PolicyDetails = () => {
                 }
 
                 // Fetch policy details for each claim
-                const policyPromises = userClaims.map(async (claimId: number) => {
-                    const claim = await readContract({
+                const policyPromises = userClaims.map(async (claimId: bigint) => {
+                    const { data: claimData } = await useScaffoldReadContract({
                         contractName: "ClaimProcessor",
                         functionName: "getClaim",
                         args: [claimId],
                     });
 
-                    if (!claim) return null;
+                    if (!claimData) return null;
 
-                    const policy = await readContract({
+                    const claim = claimData;
+
+                    const { data: policyData } = await useScaffoldReadContract({
                         contractName: "ClaimProcessor",
                         functionName: "getPolicy",
-                        args: [claim.insured],
+                        args: [claim[0]],
                     });
 
-                    if (!policy) return null;
+                    if (!policyData) return null;
+
+                    const policy = policyData;
 
                     return {
-                        id: `POL-${claimId}`,
-                        tokenId: policy.tokenAddress,
-                        tokenName: `Policy for ${policy.tokenAddress.substring(0, 6)}...${policy.tokenAddress.substring(policy.tokenAddress.length - 4)}`,
-                        coverageAmount: policy.coverageAmount,
-                        premiumAmount: policy.premium,
-                        startDate: new Date(Number(policy.startTime) * 1000),
-                        endDate: new Date(Number(policy.endTime) * 1000),
-                        status: policy.isActive ? "Active" : "Expired",
+                        id: `POL-${claimId.toString()}`,
+                        tokenId: policy[0],
+                        tokenName: `Policy for ${policy[0].substring(0, 6)}...${policy[0].substring(policy[0].length - 4)}`,
+                        coverageAmount: policy[1],
+                        premiumAmount: policy[2],
+                        startDate: new Date(Number(policy[3]) * 1000),
+                        endDate: new Date(Number(policy[4]) * 1000),
+                        status: policy[5] ? "Active" : "Expired",
                     };
                 });
 
@@ -68,11 +70,15 @@ export const PolicyDetails = () => {
             } catch (err) {
                 console.error("Error fetching policies from contract:", err);
                 setErrorFromContract(err instanceof Error ? err.message : "Failed to fetch policies from contract");
+            } finally {
+                setContractLoading(false);
             }
         };
 
-        fetchPoliciesFromContract();
-    }, [readContract]);
+        if (userClaimsResult) {
+            fetchPoliciesFromContract();
+        }
+    }, [userClaimsResult]);
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString("en-US", {
@@ -94,7 +100,7 @@ export const PolicyDetails = () => {
         }
     };
 
-    if (isLoading || contractLoading) {
+    if (isLoading || contractLoading || isClaimsLoading) {
         return (
             <div className="p-6 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -145,11 +151,11 @@ export const PolicyDetails = () => {
                             <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Coverage Amount</h4>
-                                    <p className="mt-1">${policy.coverageAmount?.toLocaleString() || '0'}</p>
+                                    <p className="mt-1">${policy.coverageAmount?.toString() || '0'}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Premium Amount</h4>
-                                    <p className="mt-1">${policy.premiumAmount?.toLocaleString() || '0'}</p>
+                                    <p className="mt-1">${policy.premiumAmount?.toString() || '0'}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Remaining Days</h4>

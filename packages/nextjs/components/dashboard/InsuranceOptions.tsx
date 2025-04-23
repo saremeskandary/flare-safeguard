@@ -1,14 +1,51 @@
 "use client";
-import { useState } from "react";
-import { useContractInteraction } from "~~/hooks/scaffold-eth/useContractInteraction";
+import { useState, useEffect } from "react";
 import { useInsuranceOptions } from "~~/hooks/useInsuranceOptions";
+import { useWriteContract, } from "wagmi";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
+import { TokenSelector } from "./TokenSelector";
+import { TokenInfo, getTokenByAddress, updateBSDTokenAddress } from "~~/utils/tokenAddresses";
+
+// Define the InsuranceOption interface to match what's coming from the API
+interface InsuranceOption {
+    id: string;
+    name: string;
+    value: number;
+    premiumRate: number;
+    description: string;
+    tokenAddress?: string;
+}
 
 export const InsuranceOptions = () => {
-    const { writeContract, isLoading } = useContractInteraction();
     const { options, isLoading: insuranceOptionsLoading, error } = useInsuranceOptions();
     const [selectedToken, setSelectedToken] = useState<string>("REAL-ESTATE-001");
     const [coverageAmount, setCoverageAmount] = useState<number>(75);
     const [duration, setDuration] = useState<number>(12);
+    const [selectedPaymentToken, setSelectedPaymentToken] = useState<TokenInfo | null>(null);
+    const { writeContractAsync, isPending } = useWriteContract();
+    const { data: mockBSDToken } = useDeployedContractInfo({ contractName: "MockBSDToken" });
+
+    const writeTx = useTransactor();
+
+    // Update the BSD token address in our token list when the mock token is loaded
+    useEffect(() => {
+        if (mockBSDToken) {
+            // Update the BSD token address
+            updateBSDTokenAddress(mockBSDToken.address);
+
+            // Set the selected payment token to BSD if not already set
+            if (!selectedPaymentToken) {
+                const bsdToken = getTokenByAddress(mockBSDToken.address);
+                if (bsdToken) {
+                    setSelectedPaymentToken(bsdToken);
+                }
+            }
+        }
+    }, [mockBSDToken, selectedPaymentToken]);
+
+    const handleTokenSelect = (token: TokenInfo) => {
+        setSelectedPaymentToken(token);
+    };
 
     if (insuranceOptionsLoading) {
         return (
@@ -37,7 +74,7 @@ export const InsuranceOptions = () => {
     }
 
     // Use the options from the database instead of mock data
-    const availableTokens = options;
+    const availableTokens = options as InsuranceOption[];
 
     const selectedTokenData = availableTokens.find(token => token.id === selectedToken);
     const premiumAmount = selectedTokenData
@@ -45,12 +82,21 @@ export const InsuranceOptions = () => {
         : 0;
 
     const handlePurchaseInsurance = async () => {
+        if (!selectedPaymentToken) {
+            console.error("No payment token selected");
+            return;
+        }
+
         try {
-            await writeContract({
-                contractName: "InsuranceCore",
-                functionName: "createPolicy",
-                args: [selectedToken, coverageAmount, duration],
-            });
+            const writeContractAsyncWithParams = () =>
+                writeContractAsync({
+                    address: selectedPaymentToken.address as `0x${string}`,
+                    abi: mockBSDToken?.abi || [],
+                    functionName: "transfer",
+                    args: [mockBSDToken?.address || "0x0", BigInt(coverageAmount)],
+                });
+
+            await writeTx(writeContractAsyncWithParams, { blockConfirmations: 1 });
         } catch (error) {
             console.error("Failed to purchase insurance:", error);
         }
@@ -82,6 +128,14 @@ export const InsuranceOptions = () => {
                                     <span className="text-gray-500">Premium Rate:</span>
                                     <span className="ml-1">{token.premiumRate}%</span>
                                 </div>
+                                {token.tokenAddress && (
+                                    <div className="col-span-2">
+                                        <span className="text-gray-500">Token:</span>
+                                        <span className="ml-1">
+                                            {getTokenByAddress(token.tokenAddress)?.symbol || "Unknown"}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -126,6 +180,16 @@ export const InsuranceOptions = () => {
                                 </select>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Payment Token
+                                </label>
+                                <TokenSelector
+                                    onTokenSelect={handleTokenSelect}
+                                    selectedTokenAddress={selectedPaymentToken?.address}
+                                />
+                            </div>
+
                             <div className="bg-base-200 p-4 rounded-lg">
                                 <h4 className="font-medium mb-2">Insurance Summary</h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -153,15 +217,21 @@ export const InsuranceOptions = () => {
                                         <span className="text-gray-500">Total Premium:</span>
                                         <span className="ml-1">${(premiumAmount * duration).toLocaleString()}</span>
                                     </div>
+                                    {selectedPaymentToken && (
+                                        <div className="col-span-2">
+                                            <span className="text-gray-500">Payment Token:</span>
+                                            <span className="ml-1">{selectedPaymentToken.symbol}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             <button
                                 onClick={handlePurchaseInsurance}
-                                disabled={isLoading}
-                                className="w-full inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                disabled={isPending || !selectedPaymentToken}
+                                className="w-full inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
                             >
-                                {isLoading ? "Processing..." : "Purchase Insurance"}
+                                {isPending ? "Processing..." : "Purchase Insurance"}
                             </button>
                         </div>
                     </div>

@@ -16,7 +16,11 @@
     "vercel:yolo": "vercel --build-env YARN_ENABLE_IMMUTABLE_INSTALLS=false --build-env ENABLE_EXPERIMENTAL_COREPACK=1 --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true --build-env VERCEL_TELEMETRY_DISABLED=1",
     "seed:claims": "ts-node -r tsconfig-paths/register scripts/seed-claims.ts",
     "seed:insurance": "ts-node -r tsconfig-paths/register scripts/seed-insurance-options.ts",
-    "seed:policies": "ts-node -r tsconfig-paths/register scripts/seed-policies.ts"
+    "seed:policies": "ts-node -r tsconfig-paths/register scripts/seed-policies.ts",
+    "remove:insurance": "ts-node -r tsconfig-paths/register scripts/remove-insurance-options.ts",
+    "remove:claims": "ts-node -r tsconfig-paths/register scripts/remove-claims.ts",
+    "remove:policies": "ts-node -r tsconfig-paths/register scripts/remove-policies.ts",
+    "remove:all": "ts-node -r tsconfig-paths/register scripts/remove-all-seed-data.ts"
   },
   "dependencies": {
     "@heroicons/react": "~2.1.5",
