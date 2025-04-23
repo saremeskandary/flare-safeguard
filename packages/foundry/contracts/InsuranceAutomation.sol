@@ -4,8 +4,26 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./mock/MockTokenInsurance.sol";
 
-/// @title InsuranceAutomation
-/// @notice Handles automated tasks for insurance contracts
+/**
+ * @title Insurance Automation
+ * @dev Handles automated tasks for insurance contracts
+ *
+ * The Insurance Automation contract is designed to:
+ * - Schedule and execute automated tasks for insurance contracts
+ * - Manage recurring payments and operations for RWA token insurance
+ * - Provide a mechanism for time-based automation of insurance processes
+ * - Enable decentralized execution of scheduled insurance operations
+ *
+ * This contract works with TokenInsurance contracts to automate:
+ * - Premium payments
+ * - Coverage renewals
+ * - Policy expirations
+ * - Automated claim processing triggers
+ * - Other time-sensitive insurance operations
+ *
+ * The automation system uses a task-based approach where each task
+ * represents a specific operation to be performed at a scheduled time.
+ */
 contract InsuranceAutomation is Ownable {
     struct AutomationTask {
         address insuranceContract;
@@ -30,11 +48,21 @@ contract InsuranceAutomation is Ownable {
         address indexed insuranceContract
     );
 
+    /**
+     * @dev Constructor initializes the contract with the deployer as owner
+     */
     constructor() Ownable(msg.sender) {}
 
-    /// @notice Create a new automation task
-    /// @param _insuranceContract The address of the insurance contract
-    /// @param _dueDate The due date for the task
+    /**
+     * @notice Create a new automation task
+     * @param _insuranceContract The address of the insurance contract
+     * @param _dueDate The due date for the task
+     *
+     * This function allows the owner to schedule a new automation task for
+     * a specific insurance contract. The task will be executed when the
+     * current time reaches the due date. Tasks are identified by a unique
+     * hash generated from the contract address, due date, and creation timestamp.
+     */
     function createTask(
         address _insuranceContract,
         uint256 _dueDate
@@ -60,8 +88,15 @@ contract InsuranceAutomation is Ownable {
         emit TaskCreated(taskId, _insuranceContract, _dueDate);
     }
 
-    /// @notice Execute a task if it's due
-    /// @param _taskId The ID of the task to execute
+    /**
+     * @notice Execute a task if it's due
+     * @param _taskId The ID of the task to execute
+     *
+     * This function executes a scheduled task if the current time has reached
+     * or passed the due date. It calls the appropriate function on the
+     * insurance contract, such as handling RWA payments or processing claims.
+     * Once executed, a task cannot be executed again.
+     */
     function executeTask(bytes32 _taskId) external {
         AutomationTask storage task = tasks[_taskId];
         require(task.insuranceContract != address(0), "Task does not exist");
@@ -74,8 +109,14 @@ contract InsuranceAutomation is Ownable {
         emit TaskExecuted(_taskId, task.insuranceContract);
     }
 
-    /// @notice Remove a task
-    /// @param _taskId The ID of the task to remove
+    /**
+     * @notice Remove a task
+     * @param _taskId The ID of the task to remove
+     *
+     * This function allows the owner to cancel a scheduled task before it
+     * is executed. It removes the task from storage and updates the
+     * associated insurance contract's task list.
+     */
     function removeTask(bytes32 _taskId) external onlyOwner {
         AutomationTask storage task = tasks[_taskId];
         require(task.insuranceContract != address(0), "Task does not exist");
@@ -96,20 +137,30 @@ contract InsuranceAutomation is Ownable {
         emit TaskRemoved(_taskId, task.insuranceContract);
     }
 
-    /// @notice Get all tasks for an insurance contract
-    /// @param _insuranceContract The address of the insurance contract
-    /// @return taskIds Array of task IDs
+    /**
+     * @notice Get all tasks for an insurance contract
+     * @param _insuranceContract The address of the insurance contract
+     * @return taskIds Array of task IDs
+     *
+     * This function returns all task IDs associated with a specific
+     * insurance contract, allowing for easy tracking of scheduled operations.
+     */
     function getInsuranceTasks(
         address _insuranceContract
     ) external view returns (bytes32[] memory taskIds) {
         return insuranceTasks[_insuranceContract];
     }
 
-    /// @notice Get task details
-    /// @param _taskId The ID of the task
-    /// @return insuranceContract The address of the insurance contract
-    /// @return dueDate The due date of the task
-    /// @return executed Whether the task has been executed
+    /**
+     * @notice Get task details
+     * @param _taskId The ID of the task
+     * @return insuranceContract The address of the insurance contract
+     * @return dueDate The due date of the task
+     * @return executed Whether the task has been executed
+     *
+     * This function returns the details of a specific task, including
+     * the associated insurance contract, due date, and execution status.
+     */
     function getTaskDetails(
         bytes32 _taskId
     )

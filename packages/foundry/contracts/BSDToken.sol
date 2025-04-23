@@ -6,8 +6,18 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title BSD Token
+ * @title BSD Token (Backed Stable Digital Token)
  * @dev Implementation of the BSD Token with backing mechanism and governance features
+ *
+ * BSD (Backed Stable Digital Token) is an ERC20 token that implements:
+ * - ETH backing mechanism allowing users to add/remove ETH backing
+ * - Governance features including pausability and owner-controlled minting
+ * - Standard ERC20 functionality with additional security features
+ *
+ * The token is designed to provide a stable digital asset that can be backed by ETH,
+ * offering users the ability to add and remove backing while maintaining standard
+ * ERC20 token functionality. The backing mechanism provides value stability and
+ * collateralization for the token.
  */
 contract BSDToken is ERC20, Pausable, Ownable {
     uint256 private _totalBacking;

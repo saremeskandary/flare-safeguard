@@ -6,6 +6,19 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BSDToken.sol";
 
+/**
+ * @title Liquidity Pool
+ * @dev A simplified liquidity pool for BSD/USDT trading with basic fee collection
+ *
+ * This contract provides a basic liquidity pool implementation that:
+ * - Allows users to add and remove liquidity in BSD/USDT pairs
+ * - Facilitates swaps between BSD and USDT with a 0.3% fee
+ * - Tracks accumulated fees for potential distribution
+ * - Uses SafeERC20 for secure token transfers
+ *
+ * This is a simplified version compared to BSDLiquidityPool, focusing on core
+ * functionality without advanced features like fee distribution or liquidity mining.
+ */
 contract LiquidityPool is Ownable {
     using SafeERC20 for IERC20;
     using SafeERC20 for BSDToken;
@@ -30,11 +43,21 @@ contract LiquidityPool is Ownable {
         uint256 usdtAmount
     );
 
+    /**
+     * @dev Constructor initializes the liquidity pool with BSD and USDT token addresses
+     * @param _bsdToken Address of the BSD token contract
+     * @param _usdtToken Address of the USDT token contract
+     */
     constructor(address _bsdToken, address _usdtToken) Ownable(msg.sender) {
         bsdToken = BSDToken(_bsdToken);
         usdtToken = IERC20(_usdtToken);
     }
 
+    /**
+     * @dev Allows users to add liquidity to the pool
+     * @param bsdAmount Amount of BSD tokens to add
+     * @param usdtAmount Amount of USDT tokens to add
+     */
     function addLiquidity(uint256 bsdAmount, uint256 usdtAmount) external {
         require(
             bsdAmount > 0 && usdtAmount > 0,
@@ -50,6 +73,10 @@ contract LiquidityPool is Ownable {
         emit LiquidityAdded(msg.sender, bsdAmount, usdtAmount);
     }
 
+    /**
+     * @dev Allows users to remove liquidity from the pool
+     * @param amount Amount of BSD tokens to remove
+     */
     function removeLiquidity(uint256 amount) external {
         require(amount > 0, "Amount must be greater than 0");
         require(balanceOf[msg.sender] >= amount, "Insufficient balance");
@@ -61,6 +88,10 @@ contract LiquidityPool is Ownable {
         emit LiquidityRemoved(msg.sender, amount);
     }
 
+    /**
+     * @dev Allows users to swap BSD for USDT
+     * @param bsdAmount Amount of BSD tokens to swap
+     */
     function swapBSDForUSDT(uint256 bsdAmount) external {
         require(bsdAmount > 0, "Amount must be greater than 0");
 
@@ -73,6 +104,10 @@ contract LiquidityPool is Ownable {
         emit SwapExecuted(msg.sender, bsdAmount, amountAfterFee);
     }
 
+    /**
+     * @dev Returns the total accumulated fees
+     * @return The total amount of fees collected
+     */
     function getAccumulatedFees() external view returns (uint256) {
         return accumulatedFees;
     }

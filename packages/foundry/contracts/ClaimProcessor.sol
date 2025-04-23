@@ -6,8 +6,24 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title ClaimProcessor
- * @dev Handles insurance claim processing, verification, and payout
+ * @title Claim Processor
+ * @dev Implementation of the insurance claim processing system for BSD token
+ *
+ * The Claim Processor is a specialized contract that:
+ * - Manages insurance claims for BSD (Backed Stable Digital Token) holders
+ * - Processes claims against insured tokens (which can be any ERC20 token)
+ * - Implements a multi-step verification process:
+ *   * Initial claim submission
+ *   * Evidence verification
+ *   * Expert review
+ *   * Final settlement
+ * - Handles claim payouts in USDT (Tether) for stability
+ * - Includes role-based access control for different stakeholders
+ *
+ * This system is designed to provide insurance coverage for BSD token holders
+ * while maintaining transparency and security in the claim processing workflow.
+ * Claims are settled in USDT to ensure stable value for payouts, while BSD
+ * remains the primary token for the platform's operations.
  */
 contract ClaimProcessor is AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -174,7 +190,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
      */
     function processPayout(
         uint256 claimId
-    ) external onlyRole(ADMIN_ROLE) nonReentrant {
+    ) internal onlyRole(ADMIN_ROLE) nonReentrant {
         Claim storage claim = claims[claimId];
         require(claim.status == ClaimStatus.Approved, "Claim not approved");
         require(claim.status != ClaimStatus.Paid, "Claim already paid");

@@ -10,6 +10,18 @@ import "./BSDToken.sol";
 /**
  * @title BSD Liquidity Pool
  * @dev Implementation of the BSD/USDT liquidity pool with fee distribution
+ *
+ * The BSD Liquidity Pool is a specialized AMM (Automated Market Maker) that:
+ * - Facilitates trading between BSD (Backed Stable Digital Token) and USDT
+ * - Implements a fee mechanism (0.3% per trade) that is distributed to:
+ *   * BSD token holders (50% of fees)
+ *   * Liquidity providers (50% of fees)
+ * - Provides liquidity mining incentives through BSD token rewards
+ * - Includes emergency pause functionality for security
+ *
+ * This pool is designed to provide deep liquidity for BSD/USDT trading pairs
+ * while incentivizing long-term liquidity provision through fee sharing and
+ * reward mechanisms.
  */
 contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");

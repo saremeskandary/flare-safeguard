@@ -6,8 +6,28 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title InsuranceCore
+ * @title Insurance Core
  * @dev Core insurance features including RWA token evaluation, coverage options, and premium calculation
+ *
+ * The Insurance Core is the central component of the BSD Insurance Protocol that:
+ * - Evaluates RWA tokens through a comprehensive risk assessment process that includes:
+ *   - Token liquidity analysis and trading volume metrics
+ *   - Historical price volatility and market stability
+ *   - Asset backing verification and documentation review
+ *   - Smart contract security and compliance checks
+ *   - Assigns risk scores (1-100) based on weighted evaluation criteria
+ * - Manages insurance coverage options with different limits and rates
+ * - Calculates premiums based on coverage amount, duration, and token risk
+ * - Provides a foundation for the insurance marketplace
+ *
+ * This contract implements the business logic for:
+ * - Risk assessment of tokenized real-world assets
+ * - Premium calculation algorithms
+ * - Coverage option management
+ * - Token evaluation tracking
+ *
+ * The Insurance Core works in conjunction with the Claim Processor to provide
+ * a complete insurance solution for RWA token holders.
  */
 contract InsuranceCore is AccessControl, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -45,6 +65,9 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 premium
     );
 
+    /**
+     * @dev Constructor initializes the contract and sets up initial roles
+     */
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
@@ -56,6 +79,10 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
      * @param premiumRate Premium rate in basis points
      * @param minDuration Minimum coverage duration in days
      * @param maxDuration Maximum coverage duration in days
+     *
+     * This function allows administrators to create new insurance coverage options
+     * with different limits, rates, and duration constraints. These options form
+     * the basis of the insurance products offered by the protocol.
      */
     function addCoverageOption(
         uint256 coverageLimit,
@@ -87,6 +114,11 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
      * @param tokenAddress Address of the RWA token
      * @param value Current value of the token
      * @param riskScore Risk score (1-100)
+     *
+     * This function allows evaluators to assess the risk profile of a tokenized
+     * real-world asset. The risk score (1-100) is used to adjust premium rates,
+     * with higher scores resulting in higher premiums. This evaluation is critical
+     * for determining appropriate insurance pricing.
      */
     function evaluateRWA(
         address tokenAddress,
@@ -114,6 +146,15 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
      * @param duration Coverage duration in days
      * @param tokenAddress Address of the RWA token
      * @return premium Calculated premium amount
+     *
+     * This function calculates the insurance premium based on:
+     * 1. The coverage amount requested
+     * 2. The duration of coverage
+     * 3. The risk score of the token
+     * 4. The applicable coverage option
+     *
+     * The premium calculation incorporates both the base rate from the coverage
+     * option and an adjustment based on the token's risk score.
      */
     function calculatePremium(
         uint256 coverageAmount,
@@ -159,6 +200,11 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     /**
      * @dev Get coverage option details
      * @param optionId ID of the coverage option
+     * @return coverageLimit Maximum coverage amount
+     * @return premiumRate Premium rate in basis points
+     * @return minDuration Minimum coverage duration in days
+     * @return maxDuration Maximum coverage duration in days
+     * @return isActive Whether the option is currently active
      */
     function getCoverageOption(
         uint256 optionId
@@ -186,6 +232,10 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     /**
      * @dev Get RWA evaluation details
      * @param tokenAddress Address of the RWA token
+     * @return value Current value of the token
+     * @return riskScore Risk score (1-100)
+     * @return lastUpdated Timestamp of the last evaluation
+     * @return isValid Whether the evaluation is currently valid
      */
     function getRWAEvaluation(
         address tokenAddress
