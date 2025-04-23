@@ -1,34 +1,41 @@
 "use client";
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth/useScaffoldReadContract";
+import { useAccount } from "wagmi";
 import { InsuranceOptions } from "./InsuranceOptions";
 import { PolicyDetails } from "./PolicyDetails";
 import { ClaimHistory } from "./ClaimHistory";
 import { CreatePolicy } from "./CreatePolicy";
-import { useAccount } from "wagmi";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { CrossChainClaim } from "./CrossChainClaim";
 
 export const Dashboard = () => {
-    const [selectedContract, setSelectedContract] = useState<string>("InsuranceCore");
-    const [activeTab, setActiveTab] = useState<string>("browse");
+    const { theme } = useTheme();
     const { address } = useAccount();
+    const [selectedContract, setSelectedContract] = useState<string>("");
+    const [activeTab, setActiveTab] = useState<string>("browse");
 
-    // Check if user has admin role in the contract
-    const { data: hasAdminRole } = useScaffoldReadContract({
+    const { data: isAdmin } = useScaffoldReadContract({
         contractName: "InsuranceCore",
         functionName: "hasRole",
-        args: [
-            "0x0000000000000000000000000000000000000000000000000000000000000000", // DEFAULT_ADMIN_ROLE
-            address
-        ],
+        args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address], // DEFAULT_ADMIN_ROLE
     });
 
-    const isAdmin = hasAdminRole === true;
+    const { data: isVerifier } = useScaffoldReadContract({
+        contractName: "InsuranceCore",
+        functionName: "hasRole",
+        args: ["0x0000000000000000000000000000000000000000000000000000000000000001", address], // VERIFIER_ROLE
+    });
 
     const contracts = [
-        { name: "InsuranceCore", description: "Core insurance contract" },
-        { name: "InsuranceAutomation", description: "Automated insurance processes" },
-        { name: "LiquidityPool", description: "Liquidity pool management" },
-        { name: "BSDToken", description: "BSD token contract" },
+        {
+            name: "InsuranceCore",
+            description: "Core insurance contract for policy management",
+        },
+        {
+            name: "ClaimProcessor",
+            description: "Contract for processing insurance claims",
+        },
     ];
 
     const handleContractSelect = (contractName: string) => {
@@ -36,6 +43,16 @@ export const Dashboard = () => {
     };
 
     const renderTabContent = () => {
+        if (!selectedContract) {
+            return (
+                <div className={`p-6 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
+                    <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        Please select a contract to continue.
+                    </p>
+                </div>
+            );
+        }
+
         switch (activeTab) {
             case "browse":
                 return <InsuranceOptions />;
@@ -44,76 +61,117 @@ export const Dashboard = () => {
             case "claims":
                 return <ClaimHistory />;
             case "create":
-                return <CreatePolicy />;
+                return isAdmin ? <CreatePolicy /> : <div>Access denied</div>;
+            case "cross-chain-claim":
+                return <CrossChainClaim />;
             default:
-                return <InsuranceOptions />;
+                return <div>Select a tab</div>;
         }
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6 bg-base-100">
-            {/* Navigation Tabs */}
-            <div className="flex border-b border-base-300">
-                <button
-                    className={`px-4 py-2 font-medium text-sm ${activeTab === "browse"
-                        ? "border-b-2 border-accent text-accent"
-                        : "text-base-content/60 hover:text-base-content"
-                        }`}
-                    onClick={() => setActiveTab("browse")}
-                >
-                    Browse Insurance
-                </button>
-                <button
-                    className={`px-4 py-2 font-medium text-sm ${activeTab === "policies"
-                        ? "border-b-2 border-accent text-accent"
-                        : "text-base-content/60 hover:text-base-content"
-                        }`}
-                    onClick={() => setActiveTab("policies")}
-                >
-                    My Policies
-                </button>
-                <button
-                    className={`px-4 py-2 font-medium text-sm ${activeTab === "claims"
-                        ? "border-b-2 border-accent text-accent"
-                        : "text-base-content/60 hover:text-base-content"
-                        }`}
-                    onClick={() => setActiveTab("claims")}
-                >
-                    Claim History
-                </button>
-                {isAdmin && (
-                    <button
-                        className={`px-4 py-2 font-medium text-sm ${activeTab === "create"
-                            ? "border-b-2 border-accent text-accent"
-                            : "text-base-content/60 hover:text-base-content"
-                            }`}
-                        onClick={() => setActiveTab("create")}
-                    >
-                        Create Policy
-                    </button>
-                )}
-            </div>
-
-            {/* Contract Selection (only visible in contract tab) */}
-            {activeTab === "contracts" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="container mx-auto px-4 py-8">
+            <div className="mb-8">
+                <h1 className={`text-3xl font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                    Insurance Dashboard
+                </h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {contracts.map(contract => (
                         <div
                             key={contract.name}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all ${selectedContract === contract.name
-                                ? "border-primary bg-primary/10"
-                                : "border-gray-200 hover:border-primary/50"
+                            className={`p-4 rounded-lg border cursor-pointer transition-colors ${selectedContract === contract.name
+                                ? theme === "dark"
+                                    ? "border-blue-500 bg-blue-900/20"
+                                    : "border-blue-500 bg-blue-50"
+                                : theme === "dark"
+                                    ? "border-gray-700 hover:border-gray-600"
+                                    : "border-gray-200 hover:border-gray-300"
                                 }`}
                             onClick={() => handleContractSelect(contract.name)}
                         >
-                            <h3 className="font-semibold">{contract.name}</h3>
-                            <p className="text-sm text-gray-500">{contract.description}</p>
+                            <h3 className={`text-lg font-semibold mb-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                                {contract.name}
+                            </h3>
+                            <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                                {contract.description}
+                            </p>
                         </div>
                     ))}
                 </div>
-            )}
+            </div>
 
-            {/* Tab Content */}
+            <div className="mb-6">
+                <nav className="flex space-x-4">
+                    <button
+                        onClick={() => setActiveTab("browse")}
+                        className={`px-4 py-2 rounded-lg ${activeTab === "browse"
+                            ? theme === "dark"
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-500 text-white"
+                            : theme === "dark"
+                                ? "text-gray-300 hover:bg-gray-700"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                    >
+                        Browse Insurance
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("policies")}
+                        className={`px-4 py-2 rounded-lg ${activeTab === "policies"
+                            ? theme === "dark"
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-500 text-white"
+                            : theme === "dark"
+                                ? "text-gray-300 hover:bg-gray-700"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                    >
+                        My Policies
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("claims")}
+                        className={`px-4 py-2 rounded-lg ${activeTab === "claims"
+                            ? theme === "dark"
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-500 text-white"
+                            : theme === "dark"
+                                ? "text-gray-300 hover:bg-gray-700"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                    >
+                        Claim History
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("cross-chain-claim")}
+                        className={`px-4 py-2 rounded-lg ${activeTab === "cross-chain-claim"
+                            ? theme === "dark"
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-500 text-white"
+                            : theme === "dark"
+                                ? "text-gray-300 hover:bg-gray-700"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                    >
+                        Submit Cross-Chain Claim
+                    </button>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setActiveTab("create")}
+                            className={`px-4 py-2 rounded-lg ${activeTab === "create"
+                                ? theme === "dark"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-blue-500 text-white"
+                                : theme === "dark"
+                                    ? "text-gray-300 hover:bg-gray-700"
+                                    : "text-gray-700 hover:bg-gray-100"
+                                }`}
+                        >
+                            Create Policy
+                        </button>
+                    )}
+                </nav>
+            </div>
+
             {renderTabContent()}
         </div>
     );

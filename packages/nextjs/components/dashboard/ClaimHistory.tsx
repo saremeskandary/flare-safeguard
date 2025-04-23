@@ -1,139 +1,137 @@
 "use client";
 import { useTheme } from "next-themes";
-import { useClaims } from "~~/hooks/useClaims";
+import { useClaims, type Claim } from "~~/hooks/scaffold-eth/useClaims";
+import { useAccount } from "wagmi";
 
 export const ClaimHistory = () => {
+    const { theme } = useTheme();
+    const { address } = useAccount();
     const { claims, isLoading, error } = useClaims();
-    const { resolvedTheme } = useTheme();
-    const isDarkMode = resolvedTheme === "dark";
 
-    const formatDate = (date: Date | null) => {
-        if (!date) return "N/A";
-        return new Date(date).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
+    const formatDate = (timestamp: bigint) => {
+        return new Date(Number(timestamp) * 1000).toLocaleDateString();
     };
 
-    const getStatusStyles = (status: string) => {
-        if (isDarkMode) {
+    const getStatusStyles = (status: number) => {
+        const baseStyles = "px-3 py-1 rounded-full text-sm font-medium";
+        if (theme === "dark") {
             switch (status) {
-                case "approved":
-                    return "bg-emerald-900/50 text-emerald-300 ring-1 ring-emerald-500/30";
-                case "pending":
-                    return "bg-amber-900/50 text-amber-300 ring-1 ring-amber-500/30";
-                case "rejected":
-                    return "bg-red-900/50 text-red-300 ring-1 ring-red-500/30";
+                case 0: // Pending
+                    return `${baseStyles} bg-yellow-900 text-yellow-200`;
+                case 1: // Approved
+                    return `${baseStyles} bg-green-900 text-green-200`;
+                case 2: // Rejected
+                    return `${baseStyles} bg-red-900 text-red-200`;
                 default:
-                    return "bg-gray-800/50 text-gray-300 ring-1 ring-gray-500/30";
+                    return `${baseStyles} bg-gray-700 text-gray-300`;
             }
         } else {
             switch (status) {
-                case "approved":
-                    return "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20";
-                case "pending":
-                    return "bg-amber-100 text-amber-800 ring-1 ring-amber-600/20";
-                case "rejected":
-                    return "bg-red-100 text-red-800 ring-1 ring-red-600/20";
+                case 0: // Pending
+                    return `${baseStyles} bg-yellow-100 text-yellow-800`;
+                case 1: // Approved
+                    return `${baseStyles} bg-green-100 text-green-800`;
+                case 2: // Rejected
+                    return `${baseStyles} bg-red-100 text-red-800`;
                 default:
-                    return "bg-gray-100 text-gray-800 ring-1 ring-gray-600/20";
+                    return `${baseStyles} bg-gray-100 text-gray-800`;
             }
         }
     };
 
     if (error) {
         return (
-            <div className="p-6 rounded-xl border border-red-200 backdrop-blur-sm shadow-sm">
-                <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
-                <p className="text-red-600">{error}</p>
+            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-red-900/20" : "bg-red-50"}`}>
+                <p className={`${theme === "dark" ? "text-red-200" : "text-red-800"}`}>
+                    Error loading claims: {error.message}
+                </p>
             </div>
         );
     }
 
     if (isLoading) {
         return (
-            <div className="p-6 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
+                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>Loading claims...</p>
             </div>
         );
     }
 
-    if (claims.length === 0) {
+    if (!claims || claims.length === 0) {
         return (
-            <div className="p-8 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Claim History</h2>
-                <p className="text-gray-500">You don&apos;t have any insurance claims.</p>
+            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
+                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>No claims found.</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 max-w-6xl mx-auto">
-            <div className="p-8 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm">
-                <h2 className="text-2xl font-semibold mb-6 text-base-content">Claim History</h2>
-
-                <div className="space-y-6">
-                    {claims.map(claim => (
-                        <div
-                            key={claim.id}
-                            className="p-6 rounded-xl border border-gray-100 bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-200"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-base-content">Claim #{claim.id}</h3>
-                                    <div className="mt-1 flex items-center gap-3">
-                                        <p className="text-sm text-base-content/70">Policy ID: {claim.policyId}</p>
-                                    </div>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyles(claim.status)}`}>
-                                    {claim.status}
-                                </span>
+        <div className={`p-6 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
+            <h2 className={`text-2xl font-bold mb-6 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                Claim History
+            </h2>
+            <div className="space-y-4">
+                {claims.map((claim: Claim) => (
+                    <div
+                        key={claim.id.toString()}
+                        className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"
+                            } shadow-sm`}
+                    >
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                                    Claim #{claim.id.toString()}
+                                </h3>
+                                <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                                    Policy ID: {claim.policyId.toString()}
+                                </p>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                                <div className="space-y-4">
-                                    <div className="bg-base-300/50 p-4 rounded-lg">
-                                        <h4 className="text-sm font-medium text-base-content/80 mb-1">Claim Amount</h4>
-                                        <p className="text-lg font-semibold text-base-content">${claim.amount.toLocaleString()}</p>
-                                    </div>
-                                    <div className="bg-base-300/50 p-4 rounded-lg">
-                                        <h4 className="text-sm font-medium text-base-content/80 mb-1">Claim Date</h4>
-                                        <p className="text-lg font-semibold text-base-content">{formatDate(claim.timestamp)}</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {claim.processedAt && (
-                                        <div className="bg-base-300/50 p-4 rounded-lg">
-                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Processed Date</h4>
-                                            <p className="text-lg font-semibold text-base-content">{formatDate(claim.processedAt)}</p>
-                                        </div>
-                                    )}
-                                    {claim.processedBy && (
-                                        <div className="bg-base-300/50 p-4 rounded-lg">
-                                            <h4 className="text-sm font-medium text-base-content/80 mb-1">Processed By</h4>
-                                            <p className="text-lg font-semibold text-base-content">{claim.processedBy}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="mt-6 p-4 bg-base-300/50 rounded-lg">
-                                <h4 className="text-sm font-medium text-base-content/80 mb-2">Description</h4>
-                                <p className="text-sm text-base-content/90">{claim.description}</p>
-                            </div>
-
-                            <div className="mt-6 pt-4 border-t border-gray-100">
-                                <div className="flex justify-end">
-                                    <button className="px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg transition-colors duration-200">
-                                        View Details →
-                                    </button>
-                                </div>
-                            </div>
+                            <span className={getStatusStyles(claim.status)}>
+                                {claim.status === 0 ? "Pending" : claim.status === 1 ? "Approved" : "Rejected"}
+                            </span>
                         </div>
-                    ))}
-                </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <span className="text-gray-500">Amount: </span>
+                                <span>{claim.amount.toString()} wei</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-500">Chain ID:</span>
+                                <span>{claim.chainId.toString()}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-500">Transaction Hash:</span>
+                                <span className="font-mono text-sm break-all">{claim.txHash}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-500">Required Confirmations:</span>
+                                <span>{claim.requiredConfirmations.toString()}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-500">Claim Date: </span>
+                                <span>{formatDate(claim.claimDate)}</span>
+                            </div>
+                            {claim.processedDate > BigInt(0) && (
+                                <div>
+                                    <span className="text-gray-500">Processed Date: </span>
+                                    <span>{formatDate(claim.processedDate)}</span>
+                                </div>
+                            )}
+                            {claim.processedBy && (
+                                <div>
+                                    <span className="text-gray-500">Processed By: </span>
+                                    <span>{claim.processedBy}</span>
+                                </div>
+                            )}
+                            {claim.verifiedBy && (
+                                <div>
+                                    <span className="text-gray-500">Verified By:</span>
+                                    <span className="font-mono text-sm break-all">{claim.verifiedBy}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

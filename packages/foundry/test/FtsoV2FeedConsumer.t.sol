@@ -398,7 +398,7 @@ contract FtsoV2FeedConsumerTest is Test {
         assertTrue(feedConsumer.isPriceValid(symbol, 301));
     }
 
-    function testFailIsPriceValidForNonExistentFeed() public {
+    function testFailIsPriceValidForNonExistentFeed() public view {
         string memory symbol = "BTC/USD";
 
         feedConsumer.isPriceValid(symbol, 300);
