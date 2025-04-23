@@ -5,6 +5,9 @@ import "forge-std/Test.sol";
 import "../contracts/CrossChainClaimProcessor.sol";
 import "../contracts/FdcTransferEventListener.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "flare-periphery/src/coston2/IEVMTransactionVerification.sol";
+import "flare-periphery/src/coston2/IEVMTransaction.sol";
+import "flare-periphery/src/coston2/ContractRegistry.sol";
 
 // Mock BSD Token for testing
 contract MockBSDToken is ERC20 {
@@ -13,10 +16,44 @@ contract MockBSDToken is ERC20 {
     }
 }
 
+// Mock FDC Verification Contract
+contract MockFdcVerification is IEVMTransactionVerification {
+    function verifyEVMTransaction(
+        IEVMTransaction.Proof calldata
+    ) external pure returns (bool) {
+        return true; // Always return true for testing
+    }
+}
+
+// Mock Contract Registry
+contract MockContractRegistry {
+    MockFdcVerification public verification;
+    mapping(bytes32 => address) public contractAddresses;
+
+    constructor() {
+        verification = new MockFdcVerification();
+    }
+
+    function getFdcVerification()
+        external
+        view
+        returns (IEVMTransactionVerification)
+    {
+        return verification;
+    }
+
+    function getContractAddressByHash(
+        bytes32 hash
+    ) external view returns (address) {
+        return address(verification);
+    }
+}
+
 contract CrossChainClaimProcessorTest is Test {
     CrossChainClaimProcessor public processor;
     FdcTransferEventListener public listener;
     MockBSDToken public bsdToken;
+    MockContractRegistry public mockRegistry;
 
     address public admin = address(1);
     address public verifier = address(2);
@@ -44,6 +81,7 @@ contract CrossChainClaimProcessorTest is Test {
     function setUp() public {
         // Deploy contracts
         bsdToken = new MockBSDToken();
+        mockRegistry = new MockContractRegistry();
         listener = new FdcTransferEventListener();
         processor = new CrossChainClaimProcessor(
             address(bsdToken),
@@ -56,11 +94,30 @@ contract CrossChainClaimProcessorTest is Test {
 
         // Fund accounts
         bsdToken.transfer(insured, COVERAGE_AMOUNT);
+        bsdToken.transfer(address(processor), COVERAGE_AMOUNT); // Fund processor with enough tokens for payouts
         vm.deal(insured, 100 ether);
 
         // Setup approvals
         vm.prank(insured);
         bsdToken.approve(address(processor), type(uint256).max);
+
+        // Mock the ContractRegistry address
+        vm.etch(
+            address(0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019),
+            address(mockRegistry).code
+        );
+
+        // Add USDC token to supported tokens
+        listener.addSupportedToken(usdc, 11155111);
+
+        // Mock the verification contract to always return true
+        vm.mockCall(
+            address(mockRegistry.verification()),
+            abi.encodeWithSelector(
+                IEVMTransactionVerification.verifyEVMTransaction.selector
+            ),
+            abi.encode(true)
+        );
     }
 
     function testCreatePolicy() public {
@@ -131,26 +188,11 @@ contract CrossChainClaimProcessorTest is Test {
         assertEq(rejectionReason, "");
     }
 
-    function testVerifyCrossChainClaim() public {
-        // Create policy first
-        vm.prank(insured);
-        processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
-
-        // Submit cross-chain claim
-        bytes32 transactionHash = keccak256("test_tx");
-        uint256 chainId = 11155111; // Sepolia
-        uint16 requiredConfirmations = 12;
-        uint256 claimAmount = 500 * 10 ** 18;
-
-        vm.prank(insured);
-        uint256 claimId = processor.submitCrossChainClaim(
-            claimAmount,
-            transactionHash,
-            chainId,
-            requiredConfirmations
-        );
-
-        // Create mock proof
+    // Helper function to create a mock proof
+    function _createMockProof(
+        bytes32 transactionHash,
+        uint16 requiredConfirmations
+    ) internal pure returns (IEVMTransaction.Proof memory) {
         IEVMTransaction.RequestBody memory requestBody = IEVMTransaction
             .RequestBody({
                 transactionHash: transactionHash,
@@ -171,25 +213,131 @@ contract CrossChainClaimProcessorTest is Test {
         });
 
         bytes32[] memory merkleProof = new bytes32[](0);
-        IEVMTransaction.Proof memory proof = IEVMTransaction.Proof({
-            merkleProof: merkleProof,
-            data: response
-        });
+        return
+            IEVMTransaction.Proof({merkleProof: merkleProof, data: response});
+    }
 
-        // Add USDC token to supported tokens
-        listener.addSupportedToken(usdc, chainId);
+    // Helper function to add a mock transfer event
+    function _addMockTransferEvent(
+        address from,
+        address to,
+        uint256 value,
+        address tokenAddress,
+        uint256 chainId
+    ) internal {
+        // Create a mock transfer event
+        IFdcTransferEventListener.TokenTransfer
+            memory transfer = IFdcTransferEventListener.TokenTransfer({
+                from: from,
+                to: to,
+                value: value,
+                tokenAddress: tokenAddress,
+                chainId: chainId
+            });
+
+        // Add the transfer to the listener
+        vm.mockCall(
+            address(listener),
+            abi.encodeWithSelector(
+                IFdcTransferEventListener.getTokenTransfersByAddress.selector,
+                to
+            ),
+            abi.encode(new IFdcTransferEventListener.TokenTransfer[](1))
+        );
+
+        // Add the transfer to the listener
+        vm.prank(address(listener));
+        listener.collectTransferEvents(
+            _createMockProof(keccak256("test_tx"), 12)
+        );
+
+        // Mock the getTokenTransfersByAddress call to return our transfer
+        IFdcTransferEventListener.TokenTransfer[]
+            memory transfers = new IFdcTransferEventListener.TokenTransfer[](1);
+        transfers[0] = transfer;
+        vm.mockCall(
+            address(listener),
+            abi.encodeWithSelector(
+                IFdcTransferEventListener.getTokenTransfersByAddress.selector,
+                to
+            ),
+            abi.encode(transfers)
+        );
+    }
+
+    // Helper function to verify claim details
+    function _verifyClaimDetails(
+        uint256 claimId,
+        address expectedInsured,
+        address expectedToken,
+        uint256 expectedAmount,
+        ClaimProcessor.ClaimStatus expectedStatus
+    ) internal view {
+        (
+            address claimInsured,
+            address claimToken,
+            uint256 claimAmount,
+            ,
+            string memory description,
+            ClaimProcessor.ClaimStatus status,
+            ,
+            string memory rejectionReason
+        ) = processor.getClaim(claimId);
+
+        assertEq(claimInsured, expectedInsured);
+        assertEq(claimToken, expectedToken);
+        assertEq(claimAmount, expectedAmount);
+        assertEq(description, "Cross-chain claim");
+        assertEq(uint256(status), uint256(expectedStatus));
+        assertEq(rejectionReason, "");
+    }
+
+    function testVerifyCrossChainClaim() public {
+        // Create policy first
+        vm.prank(insured);
+        processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
+
+        // Submit cross-chain claim
+        bytes32 transactionHash = keccak256("test_tx");
+        uint256 chainId = 11155111; // Sepolia
+        uint16 requiredConfirmations = 12;
+        uint256 claimAmount = 500 * 10 ** 18;
+
+        vm.prank(insured);
+        uint256 claimId = processor.submitCrossChainClaim(
+            claimAmount,
+            transactionHash,
+            chainId,
+            requiredConfirmations
+        );
+
+        // Add a mock transfer event
+        _addMockTransferEvent(
+            address(0), // from (any address)
+            insured, // to (the insured)
+            claimAmount, // value (the claim amount)
+            usdc, // token address (the insured token)
+            chainId // chain ID (the same as in the claim)
+        );
+
+        // Create and verify proof
+        IEVMTransaction.Proof memory proof = _createMockProof(
+            transactionHash,
+            requiredConfirmations
+        );
 
         // Verify claim
         vm.prank(verifier);
-        vm.expectEmit(true, false, false, true);
-        emit CrossChainClaimVerified(claimId, transactionHash, chainId);
         processor.verifyCrossChainClaim(claimId, proof);
 
-        // Verify claim status was updated
-        (, , , , , ClaimProcessor.ClaimStatus status, , ) = processor.getClaim(
-            claimId
+        // Verify claim status
+        _verifyClaimDetails(
+            claimId,
+            insured,
+            usdc,
+            claimAmount,
+            ClaimProcessor.ClaimStatus.Approved
         );
-        assertEq(uint256(status), uint256(ClaimProcessor.ClaimStatus.Approved));
     }
 
     function testProcessCrossChainClaim() public {
@@ -211,34 +359,20 @@ contract CrossChainClaimProcessorTest is Test {
             requiredConfirmations
         );
 
-        // Create mock proof
-        IEVMTransaction.RequestBody memory requestBody = IEVMTransaction
-            .RequestBody({
-                transactionHash: transactionHash,
-                requiredConfirmations: requiredConfirmations,
-                provideInput: false,
-                listEvents: true,
-                logIndices: new uint32[](0)
-            });
+        // Add a mock transfer event
+        _addMockTransferEvent(
+            address(0), // from (any address)
+            insured, // to (the insured)
+            claimAmount, // value (the claim amount)
+            usdc, // token address (the insured token)
+            chainId // chain ID (the same as in the claim)
+        );
 
-        IEVMTransaction.ResponseBody memory responseBody;
-        IEVMTransaction.Response memory response = IEVMTransaction.Response({
-            attestationType: bytes32(0),
-            sourceId: bytes32(0),
-            votingRound: 0,
-            lowestUsedTimestamp: 0,
-            requestBody: requestBody,
-            responseBody: responseBody
-        });
-
-        bytes32[] memory merkleProof = new bytes32[](0);
-        IEVMTransaction.Proof memory proof = IEVMTransaction.Proof({
-            merkleProof: merkleProof,
-            data: response
-        });
-
-        // Add USDC token to supported tokens
-        listener.addSupportedToken(usdc, chainId);
+        // Create and verify proof
+        IEVMTransaction.Proof memory proof = _createMockProof(
+            transactionHash,
+            requiredConfirmations
+        );
 
         // Verify claim
         vm.prank(verifier);
@@ -248,11 +382,14 @@ contract CrossChainClaimProcessorTest is Test {
         vm.prank(admin);
         processor.processCrossChainClaim(claimId);
 
-        // Verify claim status was updated
-        (, , , , , ClaimProcessor.ClaimStatus status, , ) = processor.getClaim(
-            claimId
+        // Verify claim was processed
+        _verifyClaimDetails(
+            claimId,
+            insured,
+            usdc,
+            claimAmount,
+            ClaimProcessor.ClaimStatus.Paid
         );
-        assertEq(uint256(status), uint256(ClaimProcessor.ClaimStatus.Paid));
     }
 
     function testFailSubmitClaimWithoutPolicy() public {

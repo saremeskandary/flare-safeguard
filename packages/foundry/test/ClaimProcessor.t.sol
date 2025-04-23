@@ -205,8 +205,9 @@ contract ClaimProcessorTest is Test {
     }
 
     function testProcessPayout() public {
+        // Create policy and submit claim
         vm.startPrank(user);
-        mockToken.approve(address(claimProcessor), 100 ether);
+        mockToken.approve(address(claimProcessor), 1000 ether);
         claimProcessor.createPolicy(
             address(mockToken),
             1000 ether,
@@ -216,20 +217,59 @@ contract ClaimProcessorTest is Test {
         claimProcessor.submitClaim(500 ether, "Test claim");
         vm.stopPrank();
 
-        vm.prank(verifier);
+        // Review and approve claim
+        vm.startPrank(verifier);
         claimProcessor.reviewClaim(0, true, "");
+        vm.stopPrank();
 
         // Mint tokens to contract for payout
         mockToken.mint(address(claimProcessor), 500 ether);
 
+        // Process payout and verify event
+        vm.startPrank(address(this));
         vm.expectEmit(true, true, true, true);
         emit ClaimPaid(0, user, 500 ether);
         claimProcessor.processClaimPayout(0);
+        vm.stopPrank();
+
+        // Verify claim state after payout
+        (
+            address insured,
+            address tokenAddress,
+            uint256 amount,
+            uint256 timestamp,
+            string memory description,
+            ClaimProcessor.ClaimStatus status,
+            address verifier_,
+            string memory rejectionReason
+        ) = claimProcessor.claims(0);
+
+        assertEq(insured, user);
+        assertEq(tokenAddress, address(mockToken));
+        assertEq(amount, 500 ether);
+        assertEq(description, "Test claim");
+        assertEq(uint8(status), uint8(ClaimProcessor.ClaimStatus.Paid));
+        assertEq(verifier_, verifier);
+        assertEq(rejectionReason, "");
     }
 
     function test_RevertWhen_ProcessPayoutForUnapprovedClaim() public {
-        vm.prank(address(this));
+        // Create policy and submit claim
+        vm.startPrank(user);
+        mockToken.approve(address(claimProcessor), 1000 ether);
+        claimProcessor.createPolicy(
+            address(mockToken),
+            1000 ether,
+            100 ether,
+            180 days
+        );
+        claimProcessor.submitClaim(500 ether, "Test claim");
+        vm.stopPrank();
+
+        // Try to process payout without approval
+        vm.startPrank(address(this));
         vm.expectRevert("Claim not approved");
         claimProcessor.processClaimPayout(0);
+        vm.stopPrank();
     }
 }

@@ -152,7 +152,8 @@ contract CrossChainClaimProcessor is ClaimProcessor {
 
         // Verify required confirmations
         require(
-            _proof.data.requestBody.requiredConfirmations >= requiredConfirmations,
+            _proof.data.requestBody.requiredConfirmations >=
+                requiredConfirmations,
             "Insufficient confirmations"
         );
 

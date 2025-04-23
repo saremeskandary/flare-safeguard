@@ -188,9 +188,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
      * @dev Process claim payout
      * @param claimId ID of the claim
      */
-    function processPayout(
-        uint256 claimId
-    ) internal onlyRole(ADMIN_ROLE) nonReentrant {
+    function processPayout(uint256 claimId) internal {
         Claim storage claim = claims[claimId];
         require(claim.status == ClaimStatus.Approved, "Claim not approved");
         require(claim.status != ClaimStatus.Paid, "Claim already paid");
