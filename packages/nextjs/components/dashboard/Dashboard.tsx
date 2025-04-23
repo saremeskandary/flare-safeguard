@@ -3,7 +3,7 @@ import { useState } from "react";
 import { InsuranceOptions } from "./InsuranceOptions";
 import { PolicyDetails } from "./PolicyDetails";
 import { ClaimHistory } from "./ClaimHistory";
-import { PolicyCreator } from "./PolicyCreator";
+import { CreatePolicy } from "./CreatePolicy";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
@@ -44,7 +44,7 @@ export const Dashboard = () => {
             case "claims":
                 return <ClaimHistory />;
             case "create":
-                return <PolicyCreator />;
+                return <CreatePolicy />;
             default:
                 return <InsuranceOptions />;
         }

@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FLARE_TESTNET_TOKENS, TokenInfo, isValidTokenAddress } from "~~/utils/tokenAddresses";
 import { fetchTokenInfo, isValidERC20Token } from "~~/utils/tokenUtils";
+import { Address } from "~~/components/scaffold-eth";
 
 interface TokenSelectorProps {
     onTokenSelect: (token: TokenInfo) => void;
@@ -106,6 +107,8 @@ export const TokenSelector = ({ onTokenSelect, selectedTokenAddress, className =
                 name: customName,
                 address: customAddress,
                 decimals: parseInt(customDecimals, 10),
+                category: "Custom",
+                description: "Custom token added by user",
             };
 
             onTokenSelect(newToken);
@@ -179,7 +182,7 @@ export const TokenSelector = ({ onTokenSelect, selectedTokenAddress, className =
                                                 <span className="font-medium">{token.symbol}</span>
                                                 <span className="text-gray-500 text-sm ml-2">({token.name})</span>
                                             </div>
-                                            <span className="text-xs text-gray-500 truncate max-w-[120px]">{token.address}</span>
+                                            <Address address={token.address} />
                                         </div>
                                     ))
                                 ) : (

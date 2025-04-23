@@ -14,7 +14,7 @@ interface InsuranceOption {
     tokenAddress?: string;
 }
 
-export const PolicyCreator = () => {
+export const CreatePolicy = () => {
     const [newOption, setNewOption] = useState<InsuranceOption>({
         id: "",
         name: "",
