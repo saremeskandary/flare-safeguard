@@ -53,7 +53,7 @@ const TokenCreation = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6 bg-base-200 rounded-lg">
+        <div className="flex flex-col gap-6 p-6 rounded-lg">
             <h2 className="text-2xl font-bold">Create RWA Token</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="form-control">
@@ -63,7 +63,7 @@ const TokenCreation = () => {
                     <input
                         type="text"
                         placeholder="Enter token name"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full bg-base-200"
                         value={tokenName}
                         onChange={(e) => setTokenName(e.target.value)}
                         required
@@ -77,7 +77,7 @@ const TokenCreation = () => {
                     <input
                         type="text"
                         placeholder="Enter token symbol"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full bg-base-200"
                         value={tokenSymbol}
                         onChange={(e) => setTokenSymbol(e.target.value)}
                         required
@@ -91,7 +91,7 @@ const TokenCreation = () => {
                     <input
                         type="text"
                         placeholder="Enter verification contract address"
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full bg-base-200"
                         value={verificationAddress}
                         onChange={(e) => setVerificationAddress(e.target.value)}
                         required

@@ -1,18 +1,7 @@
 import { useState } from "react";
-import { useTheme } from "next-themes";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { useAccount } from "wagmi";
-
-interface Policy {
-    coverageAmount: bigint;
-    premium: bigint;
-    duration: bigint;
-    active: boolean;
-}
 
 export const CrossChainClaim = () => {
-    const { theme } = useTheme();
-    const { address } = useAccount();
     const [txHash, setTxHash] = useState("");
     const [chainId, setChainId] = useState("");
     const [claimAmount, setClaimAmount] = useState("");
@@ -58,14 +47,14 @@ export const CrossChainClaim = () => {
     };
 
     return (
-        <div className={`p-6 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-            <h2 className={`text-2xl font-bold mb-6 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+        <div className={`p-6 rounded-lg border border-base-300`}>
+            <h2 className={`text-2xl font-bold mb-6`}>
                 Submit Cross-Chain Claim
             </h2>
             {policy ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className={`block mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        <label className={`block mb-2 `}>
                             Transaction Hash
                         </label>
                         <input
@@ -78,7 +67,7 @@ export const CrossChainClaim = () => {
                         />
                     </div>
                     <div>
-                        <label className={`block mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        <label className={`block mb-2`}>
                             Chain ID
                         </label>
                         <input
@@ -91,7 +80,7 @@ export const CrossChainClaim = () => {
                         />
                     </div>
                     <div>
-                        <label className={`block mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        <label className={`block mb-2 `}>
                             Claim Amount
                         </label>
                         <input
@@ -104,7 +93,7 @@ export const CrossChainClaim = () => {
                         />
                     </div>
                     <div>
-                        <label className={`block mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        <label className={`block mb-2 `}>
                             Required Confirmations
                         </label>
                         <input
@@ -120,17 +109,15 @@ export const CrossChainClaim = () => {
                         type="submit"
                         disabled={isMining}
                         className={`w-full p-3 text-white rounded ${isMining
-                            ? "bg-gray-400"
-                            : theme === "dark"
-                                ? "bg-blue-600 hover:bg-blue-700"
-                                : "bg-blue-500 hover:bg-blue-600"
+                            ? "bg-base-200"
+                            : "bg-primary hover:bg-primary-content"
                             }`}
                     >
                         {isMining ? "Submitting..." : "Submit Claim"}
                     </button>
                 </form>
             ) : (
-                <div className={`text-center py-8 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                <div className={`text-center py-8`}>
                     No active policy found. Please create a policy first.
                 </div>
             )}
