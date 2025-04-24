@@ -1,9 +1,9 @@
-const { getDb } = require('../lib/db-commonjs.js');
+const { getDb: getRemoveInsuranceDb } = require('../lib/db-commonjs.js');
 
 const removeInsuranceOptions = async () => {
   try {
     console.log('Connecting to database...');
-    const db = await getDb();
+    const db = await getRemoveInsuranceDb();
 
     // Delete all documents from the insuranceOptions collection
     const result = await db.collection('insuranceOptions').deleteMany({});

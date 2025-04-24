@@ -15,7 +15,7 @@ interface Claim {
     rejectionReason?: string;
 }
 
-type ClaimResult = [bigint, bigint, string, bigint, number, string, string, number, string];
+type ClaimResult = [bigint, bigint, bigint, bigint, number, string, string, number];
 
 export const ClaimVerification = () => {
     const { address } = useAccount();
@@ -45,23 +45,21 @@ export const ClaimVerification = () => {
             try {
                 const claims: Claim[] = [];
                 for (let i = 0; i < Number(claimCount); i++) {
-                    const { data: result } = useScaffoldReadContract({
-                        contractName: "ClaimProcessor",
-                        functionName: "getClaim",
-                        args: [BigInt(i)],
-                    }) as { data: ClaimResult | undefined };
+                    // Use the contract directly instead of the hook
+                    const claimId = BigInt(i);
+                    const result = await claimProcessorContract.read.getClaim([claimId]);
 
                     if (result) {
                         const claim = {
                             id: Number(result[0]),
                             policyId: Number(result[1]),
-                            claimant: result[2],
+                            claimant: result[2].toString(),
                             amount: result[3],
                             status: Number(result[4]),
-                            proof: result[5],
+                            proof: result[5].toString(),
                             verifiedBy: result[6],
                             requiredConfirmations: Number(result[7]),
-                            rejectionReason: result[8],
+                            rejectionReason: undefined,
                         };
 
                         // Only include claims that are pending or under review

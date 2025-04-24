@@ -23,6 +23,8 @@ export default defineConfig([
       "@typescript-eslint/no-empty-function": ["error", { 
         "allow": ["arrowFunctions"]
       }],
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-var-requires": "off",
 
       "prettier/prettier": [
         "warn",

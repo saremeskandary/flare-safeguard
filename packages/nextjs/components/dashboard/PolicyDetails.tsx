@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePolicies } from "~~/hooks/usePolicies";
-import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract, useScaffoldWriteContract, useScaffoldContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
 import { TokenSelector } from "./TokenSelector";
 import { TokenInfo } from "~~/utils/tokenAddresses";
@@ -35,6 +35,11 @@ export const PolicyDetails = () => {
     const [renewalToken, setRenewalToken] = useState<TokenInfo | null>(null);
     const { address } = useAccount();
 
+    // Get the contract instance
+    const { data: claimProcessorContract } = useScaffoldContract({
+        contractName: "ClaimProcessor",
+    });
+
     const { writeContractAsync: renewPolicyAsync } = useScaffoldWriteContract({
         contractName: "ClaimProcessor",
     });
@@ -57,29 +62,19 @@ export const PolicyDetails = () => {
                 }
 
                 const policyPromises = userClaims.map(async (claimId: bigint) => {
-                    const { data: claimData } = await useScaffoldReadContract({
-                        contractName: "ClaimProcessor",
-                        functionName: "getClaim",
-                        args: [claimId],
-                    });
+                    if (!claimProcessorContract) return null;
+
+                    const claimData = await claimProcessorContract.read.getClaim([claimId]);
 
                     if (!claimData) return null;
 
                     const claim = claimData;
-                    const { data: policyData } = await useScaffoldReadContract({
-                        contractName: "ClaimProcessor",
-                        functionName: "getPolicy",
-                        args: [claim[0]],
-                    });
+                    const policyData = await claimProcessorContract.read.getPolicy([claim[0]]);
 
                     if (!policyData) return null;
 
                     const policy = policyData;
-                    const { data: remainingCoverage } = await useScaffoldReadContract({
-                        contractName: "ClaimProcessor",
-                        functionName: "getPolicy",
-                        args: [claim[0]],
-                    });
+                    const remainingCoverage = await claimProcessorContract.read.getPolicy([claim[0]]);
 
                     return {
                         id: `POL-${claimId.toString()}`,

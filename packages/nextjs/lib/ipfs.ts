@@ -1,17 +1,17 @@
-import { Web3Storage } from 'web3.storage';
+import { createHeliaHTTP } from '@helia/http';
+import { json } from '@helia/json';
+import { CID } from 'multiformats/cid';
 
-if (!process.env.WEB3_STORAGE_TOKEN) {
-  throw new Error('Please add your Web3.Storage token to .env.local');
-}
-
-const client = new Web3Storage({ token: process.env.WEB3_STORAGE_TOKEN });
+// Create a Helia instance with HTTP transport
+const heliaPromise = createHeliaHTTP();
 
 export async function storePolicy(policyData: any) {
   try {
-    const blob = new Blob([JSON.stringify(policyData)], { type: 'application/json' });
-    const file = new File([blob], `policy-${Date.now()}.json`, { type: 'application/json' });
-    const cid = await client.put([file]);
-    return cid;
+    const helia = await heliaPromise;
+    const j = json(helia);
+    // Convert policy data to JSON and add it to IPFS
+    const cid = await j.add(policyData);
+    return cid.toString();
   } catch (error) {
     console.error('Error storing policy on IPFS:', error);
     throw error;
@@ -20,11 +20,10 @@ export async function storePolicy(policyData: any) {
 
 export async function retrievePolicy(cid: string) {
   try {
-    const res = await client.get(cid);
-    if (!res?.ok) {
-      throw new Error(`Failed to get ${cid}`);
-    }
-    const data = await res.json();
+    const helia = await heliaPromise;
+    const j = json(helia);
+    // Retrieve and parse the JSON data from IPFS
+    const data = await j.get(CID.parse(cid));
     return data;
   } catch (error) {
     console.error('Error retrieving policy from IPFS:', error);

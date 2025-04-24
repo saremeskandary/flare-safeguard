@@ -34,10 +34,4 @@ export interface User {
   claims: string[]; // Array of claim IDs
   createdAt: Date;
   updatedAt: Date;
-}
-
-module.exports = {
-  Policy,
-  Claim,
-  User
-}; 
+} 

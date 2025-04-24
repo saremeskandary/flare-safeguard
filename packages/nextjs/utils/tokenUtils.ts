@@ -1,5 +1,4 @@
-import { getContract } from "wagmi/actions";
-import { erc20ABI } from "wagmi";
+import { createPublicClient, http } from "viem";
 
 // Standard ERC20 ABI for name, symbol, and decimals
 const ERC20_ABI = [
@@ -37,37 +36,45 @@ export const fetchTokenInfo = async (address: string): Promise<{
   decimals: number;
 } | null> => {
   try {
-    // Create contract instance
-    const contract = getContract({
-      address: address as `0x${string}`,
-      abi: ERC20_ABI,
-      publicClient: {
-        chain: {
-          id: 114, // Flare Testnet
-          name: "Flare Testnet",
-          network: "flare-testnet",
-          nativeCurrency: {
-            name: "Flare",
-            symbol: "FLR",
-            decimals: 18,
+    const publicClient = createPublicClient({
+      chain: {
+        id: 114, // Flare Testnet
+        name: "Flare Testnet",
+        network: "flare-testnet",
+        nativeCurrency: {
+          name: "Flare",
+          symbol: "FLR",
+          decimals: 18,
+        },
+        rpcUrls: {
+          default: {
+            http: ["https://flare-testnet.publicnode.com"],
           },
-          rpcUrls: {
-            default: {
-              http: ["https://flare-testnet.publicnode.com"],
-            },
-            public: {
-              http: ["https://flare-testnet.publicnode.com"],
-            },
+          public: {
+            http: ["https://flare-testnet.publicnode.com"],
           },
         },
       },
+      transport: http()
     });
 
     // Fetch token information
     const [name, symbol, decimals] = await Promise.all([
-      contract.read.name(),
-      contract.read.symbol(),
-      contract.read.decimals(),
+      publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'name'
+      }) as Promise<string>,
+      publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'symbol'
+      }) as Promise<string>,
+      publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'decimals'
+      }) as Promise<bigint>
     ]);
 
     return {

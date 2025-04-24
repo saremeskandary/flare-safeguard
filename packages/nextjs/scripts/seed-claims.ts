@@ -1,7 +1,7 @@
 const { getDb: getClaimsDb } = require('../lib/db-commonjs.js');
 const { Claim } = require('../types/models.js');
 
-const USER_ADDRESS = '0x248dcc886995dd097Dc47b8561584D6479cF7772';
+const CLAIMS_USER_ADDRESS = '0x248dcc886995dd097Dc47b8561584D6479cF7772';
 
 const seedClaims = async () => {
   try {

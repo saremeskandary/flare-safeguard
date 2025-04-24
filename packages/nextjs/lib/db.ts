@@ -13,7 +13,7 @@ interface GlobalWithMongo {
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as unknown as GlobalWithMongo;
+  const globalWithMongo = global as unknown as GlobalWithMongo;
 
   if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri, options);
@@ -28,13 +28,10 @@ if (process.env.NODE_ENV === 'development') {
 
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
-const getDb = async () => {
+export const getDb = async () => {
   const client = await clientPromise;
   return client.db('safeguard');
 };
 
-// Export the functions
-module.exports = {
-  clientPromise,
-  getDb
-}; 
+// Export the client promise
+export { clientPromise }; 

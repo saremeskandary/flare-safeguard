@@ -96,12 +96,35 @@ export const InsuranceOptions = () => {
             if (!coverageAmount || !selectedToken || !tokenPrice) return;
 
             try {
-                const { data: premium } = useScaffoldReadContract({
-                    contractName: "InsuranceCore",
-                    functionName: "calculatePremium",
-                    args: [BigInt(parseFloat(coverageAmount)), BigInt(duration), selectedToken.address as `0x${string}`],
-                });
-                if (premium) setCalculatedPremium(Number(premium) / 1e8);
+                // Use the contract directly instead of the hook
+                if (insuranceCore) {
+                    // Use the contract's ABI to call the function
+                    const premium = await insuranceCore.abi.find(
+                        (item) => item.type === "function" && item.name === "calculatePremium"
+                    );
+
+                    if (premium) {
+                        // Use the contract's address and ABI to call the function
+                        const result = await window.ethereum.request({
+                            method: "eth_call",
+                            params: [
+                                {
+                                    to: insuranceCore.address,
+                                    data: window.ethereum.utils.solidityPack(
+                                        ["uint256", "uint256", "address"],
+                                        [BigInt(parseFloat(coverageAmount)), BigInt(duration), selectedToken.address]
+                                    ),
+                                },
+                                "latest",
+                            ],
+                        });
+
+                        if (result) {
+                            const premiumValue = BigInt(result);
+                            setCalculatedPremium(Number(premiumValue) / 1e8);
+                        }
+                    }
+                }
             } catch (err) {
                 console.error("Error calculating premium:", err);
                 setError("Failed to calculate premium");
@@ -109,7 +132,7 @@ export const InsuranceOptions = () => {
         };
 
         calculatePremium();
-    }, [coverageAmount, selectedToken, tokenPrice, duration]);
+    }, [coverageAmount, selectedToken, tokenPrice, duration, insuranceCore]);
 
     const handleTokenSelect = (token: TokenInfo) => {
         setSelectedToken(token);
