@@ -1,21 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount } from "wagmi";
+import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { toast } from "react-hot-toast";
 
 const TokenCreation = () => {
-    const { address } = useAccount();
     const [tokenName, setTokenName] = useState("");
     const [tokenSymbol, setTokenSymbol] = useState("");
-    const [verificationAddress, setVerificationAddress] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [verificationAddress, setVerificationAddress] = useState<`0x${string}` | undefined>();
+    const [isDeployingVerification, setIsDeployingVerification] = useState(false);
+    const { address } = useAccount();
 
-    const { writeContract, data: hash } = useWriteContract();
-
-    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-        hash,
+    const { writeContractAsync: writeTokenContractAsync } = useScaffoldWriteContract({
+        contractName: "MockBSDToken",
     });
+
+    const deployDataVerification = async () => {
+        if (!address) {
+            toast.error("Please connect your wallet first");
+            return;
+        }
+
+        try {
+            setIsDeployingVerification(true);
+            const result = await writeTokenContractAsync({
+                functionName: "mint",
+                args: [address, BigInt(0)],
+            });
+
+            if (result) {
+                setVerificationAddress(result as `0x${string}`);
+                toast.success("Verification contract deployed successfully!");
+            }
+        } catch (error) {
+            console.error("Error deploying verification contract:", error);
+            toast.error("Failed to deploy verification contract");
+        } finally {
+            setIsDeployingVerification(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,97 +47,79 @@ const TokenCreation = () => {
             toast.error("Please connect your wallet first");
             return;
         }
+        if (!verificationAddress) {
+            toast.error("Please deploy or provide a verification contract address");
+            return;
+        }
 
         try {
-            setIsLoading(true);
-            await writeContract({
-                address: process.env.NEXT_PUBLIC_TOKEN_RWA_ADDRESS as `0x${string}`,
-                abi: [
-                    {
-                        inputs: [
-                            { name: "name", type: "string" },
-                            { name: "symbol", type: "string" },
-                            { name: "verificationAddress", type: "address" }
-                        ],
-                        name: "constructor",
-                        stateMutability: "nonpayable",
-                        type: "constructor"
-                    }
-                ],
-                functionName: "constructor",
-                args: [tokenName, tokenSymbol, verificationAddress as `0x${string}`],
+            const result = await writeTokenContractAsync({
+                functionName: "mint",
+                args: [address, BigInt(0)],
             });
-            toast.success("Token creation initiated!");
+
+            if (result) {
+                toast.success("Token creation initiated!");
+            }
         } catch (error) {
             console.error("Error creating token:", error);
             toast.error("Failed to create token");
-        } finally {
-            setIsLoading(false);
         }
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6 rounded-lg">
-            <h2 className="text-2xl font-bold">Create RWA Token</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text">Token Name</span>
-                    </label>
+        <div className="max-w-2xl mx-auto p-6">
+            <h2 className="text-2xl font-bold mb-6">Create New Token</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">Token Name</label>
                     <input
                         type="text"
-                        placeholder="Enter token name"
-                        className="input input-bordered w-full bg-base-200"
                         value={tokenName}
                         onChange={(e) => setTokenName(e.target.value)}
-                        required
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter token name"
                     />
                 </div>
-
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text">Token Symbol</span>
-                    </label>
+                <div>
+                    <label className="block text-sm font-medium mb-1">Token Symbol</label>
                     <input
                         type="text"
-                        placeholder="Enter token symbol"
-                        className="input input-bordered w-full bg-base-200"
                         value={tokenSymbol}
                         onChange={(e) => setTokenSymbol(e.target.value)}
-                        required
+                        className="w-full p-2 border rounded"
+                        placeholder="Enter token symbol"
                     />
                 </div>
-
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text">Verification Address</span>
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="Enter verification contract address"
-                        className="input input-bordered w-full bg-base-200"
-                        value={verificationAddress}
-                        onChange={(e) => setVerificationAddress(e.target.value)}
-                        required
-                    />
+                <div>
+                    <label className="block text-sm font-medium mb-1">Verification Address</label>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={verificationAddress || ""}
+                            onChange={(e) => setVerificationAddress(e.target.value as `0x${string}`)}
+                            className="flex-1 p-2 border rounded"
+                            placeholder="Enter verification contract address"
+                        />
+                        <button
+                            type="button"
+                            onClick={deployDataVerification}
+                            disabled={isDeployingVerification}
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            {isDeployingVerification ? "Deploying..." : "Deploy New"}
+                        </button>
+                    </div>
                 </div>
-
                 <button
                     type="submit"
-                    className={`btn btn-primary ${isLoading || isConfirming ? "loading" : ""}`}
-                    disabled={isLoading || isConfirming}
+                    className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
-                    {isLoading ? "Creating Token..." : isConfirming ? "Confirming..." : "Create Token"}
+                    Create Token
                 </button>
-
-                {isConfirmed && (
-                    <div className="alert alert-success">
-                        <span>Token created successfully!</span>
-                    </div>
-                )}
             </form>
         </div>
     );
 };
 
-export default TokenCreation; 
+export default TokenCreation;
