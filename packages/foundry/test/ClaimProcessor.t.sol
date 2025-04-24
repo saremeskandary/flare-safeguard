@@ -121,7 +121,7 @@ contract ClaimProcessorTest is Test {
         (
             address insured,
             address tokenAddress,
-            uint256 amount, // timestamp
+            uint256 amount,
             ,
             string memory description,
             ClaimProcessor.ClaimStatus status,
@@ -237,7 +237,7 @@ contract ClaimProcessorTest is Test {
             address insured,
             address tokenAddress,
             uint256 amount,
-            uint256 timestamp,
+            ,
             string memory description,
             ClaimProcessor.ClaimStatus status,
             address verifier_,
