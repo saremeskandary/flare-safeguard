@@ -4593,7 +4593,7 @@ __metadata:
     https-browserify: ^1.0.0
     kubo-rpc-client: ~5.0.2
     mongodb: ^6.15.0
-    next: ~15.2.3
+    next: ~15.2.5
     next-nprogress-bar: ~2.3.13
     next-themes: ~0.3.0
     node-fetch: 2
@@ -13911,7 +13911,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:~15.2.3":
+"next@npm:~15.2.5":
   version: 15.2.5
   resolution: "next@npm:15.2.5"
   dependencies:
