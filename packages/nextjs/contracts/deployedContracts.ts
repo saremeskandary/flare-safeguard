@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   114: {
     InsuranceCore: {
-      address: "0x1a042365c294fbf8363333a15958c0383a731c8b",
+      address: "0x3594e138bfdfd240830fa90cdf0d93a7a67fefcb",
       abi: [
         {
           type: "constructor",
@@ -591,7 +591,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745421782.json",
+      deploymentFile: "run-1745451480.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
@@ -1913,7 +1913,7 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "processPayout",
+          name: "processClaimPayout",
           inputs: [
             {
               name: "claimId",

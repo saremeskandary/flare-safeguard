@@ -1,37 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AddressInput, IntegerInput, InputBase } from "~~/components/scaffold-eth";
-import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { useChainId } from "wagmi";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useWriteContract, useChainId } from "wagmi";
 import DeployedContracts from "~~/contracts/deployedContracts";
 
-// Define the available contract names based on the test file
-type ContractName = "InsuranceCore";
+type ContractName = "MockBSDToken" | "ClaimProcessor";
 
 interface ContractDetailsProps {
     contractName: ContractName;
 }
 
-interface ContractInteraction {
-    name: "addCoverageOption" | "evaluateRWA" | "grantRole" | "renounceRole" | "revokeRole";
-    label: string;
-    args: string[];
-}
-
-type ContractFunction = "addCoverageOption" | "evaluateRWA" | "calculatePremium";
-
 export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
     const [contractData, setContractData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState<Record<string, any>>({});
-    const chainId = useChainId();
+    const { writeContractAsync, isPending } = useWriteContract();
+    const chainId = useChainId() as keyof typeof DeployedContracts;
 
-    const { writeContractAsync } = useScaffoldWriteContract(contractName);
-
-    // Use a valid function from the InsuranceCore contract
     const { data: contractInfo, isLoading: isContractInfoLoading } = useScaffoldReadContract({
         contractName,
-        functionName: "coverageOptionCount", // This is a valid function from the test
+        functionName: "symbol", // Using a valid function name from the contract
     });
 
     useEffect(() => {
@@ -39,59 +28,6 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
             setContractData(contractInfo);
         }
     }, [contractInfo]);
-
-    const handleContractInteraction = async (functionName: ContractFunction, args: (string | number | FormDataEntryValue | null)[]) => {
-        if (!args.every(arg => arg !== null)) {
-            console.error("Invalid arguments provided");
-            return;
-        }
-
-        try {
-            switch (functionName) {
-                case "addCoverageOption":
-                    await writeContractAsync({
-                        functionName,
-                        args: [
-                            BigInt(String(args[0])), // coverageLimit
-                            BigInt(String(args[1])), // premiumRate
-                            BigInt(String(args[2])), // minDuration
-                            BigInt(String(args[3]))  // maxDuration
-                        ] as const,
-                    });
-                    break;
-                case "evaluateRWA":
-                    await writeContractAsync({
-                        functionName,
-                        args: [
-                            args[0] as `0x${string}`, // tokenAddress
-                            BigInt(String(args[1])),  // value
-                            BigInt(String(args[2]))   // riskScore
-                        ] as const,
-                    });
-                    break;
-                case "calculatePremium":
-                    await writeContractAsync({
-                        functionName,
-                        args: [
-                            BigInt(String(args[0])), // coverageAmount
-                            BigInt(String(args[1])), // duration
-                            args[2] as `0x${string}` // tokenAddress
-                        ] as const,
-                    });
-                    break;
-                case "getCoverageOption":
-                    // Implementation needed
-                    break;
-                case "getRWAEvaluation":
-                    // Implementation needed
-                    break;
-                default:
-                    throw new Error(`Unsupported function: ${functionName}`);
-            }
-        } catch (error) {
-            console.error(`Error calling ${functionName}:`, error);
-        }
-    };
 
     const renderContractInfo = () => {
         if (error) {
@@ -106,27 +42,28 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
             return <div className="text-base-content/60">No contract information available</div>;
         }
 
-        // Find the contract in DeployedContracts
-        const chainContracts = Object.entries(DeployedContracts).find(
-            ([_, contracts]) => contracts[contractName]
-        );
-        const contractAddress = chainContracts ? chainContracts[1][contractName].address : "";
-
         return (
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <h3 className="text-sm font-medium text-base-content/60">Contract Address</h3>
                         <AddressInput
-                            value={contractAddress}
+                            value={chainId && DeployedContracts[chainId] && (contractName in DeployedContracts[chainId] as any)
+                                ? (DeployedContracts[chainId] as any)[contractName].address
+                                : ""}
                             onChange={() => { }}
                             disabled
                             placeholder="Contract address"
                         />
                     </div>
                     <div>
-                        <h3 className="text-sm font-medium text-base-content/60">Coverage Options</h3>
-                        <div className="text-base-content">{contractData.toString()}</div>
+                        <h3 className="text-sm font-medium text-base-content/60">Owner</h3>
+                        <AddressInput
+                            value={contractData.owner}
+                            onChange={() => { }}
+                            disabled
+                            placeholder="Contract owner"
+                        />
                     </div>
                 </div>
             </div>
@@ -134,31 +71,29 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
     };
 
     const renderContractInteractions = () => {
-        const contractInteractions: Record<ContractName, ContractInteraction[]> = {
-            InsuranceCore: [
-                {
-                    name: "addCoverageOption",
-                    label: "Add Coverage Option",
-                    args: ["coverageLimit", "premiumRate", "minDuration", "maxDuration"]
-                },
-                {
-                    name: "evaluateRWA",
-                    label: "Evaluate RWA",
-                    args: ["tokenAddress", "value", "riskScore"]
-                },
-                {
-                    name: "grantRole",
-                    label: "Grant Role",
-                    args: ["role", "account"]
-                },
+        const interactions = {
+            MockBSDToken: [
+                { name: "transfer", label: "Transfer", args: ["to", "amount"] },
+                { name: "approve", label: "Approve", args: ["spender", "amount"] },
+            ],
+            ClaimProcessor: [
+                { name: "getClaim", label: "Get Claim", args: ["claimId"] },
+                { name: "getUserClaims", label: "Get User Claims", args: ["userAddress"] },
             ],
         };
 
-        const interactions = contractInteractions[contractName] || [];
+        const handleContractInteraction = async (functionName: string, args: any[]) => {
+            try {
+                // Implementation would go here
+                console.log(`Calling ${functionName} with args:`, args);
+            } catch (error) {
+                console.error(`Error calling ${functionName}:`, error);
+            }
+        };
 
         return (
             <div className="space-y-4">
-                {interactions.map((interaction: ContractInteraction) => (
+                {interactions[contractName]?.map((interaction: { name: string; label: string; args: string[] }) => (
                     <div key={interaction.name} className="p-4 border border-base-300 rounded-lg">
                         <h3 className="font-medium text-base-content">{interaction.label}</h3>
                         <form
@@ -167,20 +102,20 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
                                 e.preventDefault();
                                 const formData = new FormData(e.currentTarget);
                                 const args = interaction.args.map((arg: string) => formData.get(arg));
-                                await handleContractInteraction(interaction.name as ContractFunction, args);
+                                await handleContractInteraction(interaction.name, args);
                             }}
                         >
                             {interaction.args.map((arg: string) => (
                                 <div key={arg}>
                                     <label className="block text-sm font-medium text-base-content/60">{arg}</label>
-                                    {arg === "coverageLimit" || arg === "premiumRate" || arg === "minDuration" || arg === "maxDuration" || arg === "value" || arg === "riskScore" ? (
+                                    {arg === "amount" ? (
                                         <IntegerInput
                                             name={arg}
                                             value={formData[arg] || ""}
                                             onChange={value => setFormData(prev => ({ ...prev, [arg]: value }))}
                                             placeholder={`Enter ${arg}`}
                                         />
-                                    ) : arg === "tokenAddress" || arg === "account" ? (
+                                    ) : arg === "to" || arg === "spender" || arg === "userAddress" ? (
                                         <AddressInput
                                             name={arg}
                                             value={formData[arg] || ""}
@@ -200,7 +135,9 @@ export const ContractDetails = ({ contractName }: ContractDetailsProps) => {
                             <button
                                 type="submit"
                                 className="btn btn-secondary btn-sm"
+                                disabled={isPending}
                             >
+                                {isPending && <span className="loading loading-spinner loading-xs"></span>}
                                 Send 💸
                             </button>
                         </form>

@@ -45,7 +45,7 @@ export const TokenSelector = ({ onTokenSelect, selectedTokenAddress, className =
 
             try {
                 // Check if it's already in our list
-                if (isValidTokenAddress(address)) {
+                if (await isValidTokenAddress(address)) {
                     setError("This token is already in the list");
                     setIsLoading(false);
                     return;
@@ -75,7 +75,7 @@ export const TokenSelector = ({ onTokenSelect, selectedTokenAddress, className =
         }
 
         // Check if address already exists in the list
-        if (isValidTokenAddress(customAddress)) {
+        if (await isValidTokenAddress(customAddress)) {
             setError("This token address already exists in the list");
             return;
         }

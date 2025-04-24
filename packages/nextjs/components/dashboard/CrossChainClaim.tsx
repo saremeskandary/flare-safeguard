@@ -120,10 +120,10 @@ export const CrossChainClaim = () => {
                         type="submit"
                         disabled={isMining}
                         className={`w-full p-3 text-white rounded ${isMining
-                                ? "bg-gray-400"
-                                : theme === "dark"
-                                    ? "bg-blue-600 hover:bg-blue-700"
-                                    : "bg-blue-500 hover:bg-blue-600"
+                            ? "bg-gray-400"
+                            : theme === "dark"
+                                ? "bg-blue-600 hover:bg-blue-700"
+                                : "bg-blue-500 hover:bg-blue-600"
                             }`}
                     >
                         {isMining ? "Submitting..." : "Submit Claim"}

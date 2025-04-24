@@ -1,134 +1,187 @@
 "use client";
-import { useTheme } from "next-themes";
-import { useClaims, type Claim } from "~~/hooks/scaffold-eth/useClaims";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useScaffoldReadContract, useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { useAccount, usePublicClient } from "wagmi";
+
+interface Claim {
+    id: number;
+    policyId: number;
+    claimant: string;
+    amount: bigint;
+    status: number; // 0: Pending, 1: UnderReview, 2: Approved, 3: Rejected, 4: Paid
+    proof: string;
+    verifiedBy: string;
+    requiredConfirmations: number;
+    rejectionReason?: string;
+}
 
 export const ClaimHistory = () => {
-    const { theme } = useTheme();
     const { address } = useAccount();
-    const { claims, isLoading, error } = useClaims();
+    const publicClient = usePublicClient();
+    const [claims, setClaims] = useState<Claim[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const formatDate = (timestamp: bigint) => {
-        return new Date(Number(timestamp) * 1000).toLocaleDateString();
-    };
+    // Get the contract instance
+    const { data: claimProcessorContract } = useScaffoldContract({
+        contractName: "ClaimProcessor",
+    });
 
-    const getStatusStyles = (status: number) => {
-        const baseStyles = "px-3 py-1 rounded-full text-sm font-medium";
-        if (theme === "dark") {
-            switch (status) {
-                case 0: // Pending
-                    return `${baseStyles} bg-yellow-900 text-yellow-200`;
-                case 1: // Approved
-                    return `${baseStyles} bg-green-900 text-green-200`;
-                case 2: // Rejected
-                    return `${baseStyles} bg-red-900 text-red-200`;
-                default:
-                    return `${baseStyles} bg-gray-700 text-gray-300`;
+    // First, get the user's claim IDs
+    const { data: claimIds, isLoading: isLoadingIds } = useScaffoldReadContract({
+        contractName: "ClaimProcessor",
+        functionName: "getUserClaims",
+        args: [address],
+    });
+
+    // Then, fetch each claim's details
+    useEffect(() => {
+        const fetchClaims = async () => {
+            if (!claimIds || !Array.isArray(claimIds) || !claimProcessorContract || !publicClient) return;
+
+            try {
+                const claimPromises = claimIds.map(async (claimId) => {
+                    // Use publicClient instead of hooks
+                    const result = await publicClient.readContract({
+                        address: claimProcessorContract.address,
+                        abi: claimProcessorContract.abi,
+                        functionName: "getClaim",
+                        args: [claimId],
+                    });
+                    return result;
+                });
+
+                const claimResults = await Promise.all(claimPromises);
+                // Convert the results to the Claim type
+                const typedClaims = claimResults.map((result: any) => ({
+                    id: Number(result[0]),
+                    policyId: Number(result[1]),
+                    claimant: result[1],
+                    amount: result[2],
+                    status: Number(result[3]),
+                    proof: result[4],
+                    verifiedBy: result[5],
+                    requiredConfirmations: Number(result[6]),
+                    rejectionReason: result[7],
+                }));
+                setClaims(typedClaims);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to fetch claims");
+            } finally {
+                setIsLoading(false);
             }
-        } else {
-            switch (status) {
-                case 0: // Pending
-                    return `${baseStyles} bg-yellow-100 text-yellow-800`;
-                case 1: // Approved
-                    return `${baseStyles} bg-green-100 text-green-800`;
-                case 2: // Rejected
-                    return `${baseStyles} bg-red-100 text-red-800`;
-                default:
-                    return `${baseStyles} bg-gray-100 text-gray-800`;
-            }
+        };
+
+        fetchClaims();
+    }, [claimIds, claimProcessorContract, publicClient]);
+
+    const getStatusText = (status: number): string => {
+        switch (status) {
+            case 0:
+                return "Pending";
+            case 1:
+                return "Under Review";
+            case 2:
+                return "Approved";
+            case 3:
+                return "Rejected";
+            case 4:
+                return "Paid";
+            default:
+                return "Unknown";
         }
     };
 
-    if (error) {
+    const getStatusStyles = (status: number): string => {
+        switch (status) {
+            case 0:
+                return "bg-yellow-100 text-yellow-800";
+            case 1:
+                return "bg-blue-100 text-blue-800";
+            case 2:
+                return "bg-green-100 text-green-800";
+            case 3:
+                return "bg-red-100 text-red-800";
+            case 4:
+                return "bg-purple-100 text-purple-800";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
+    if (isLoading || isLoadingIds) {
         return (
-            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-red-900/20" : "bg-red-50"}`}>
-                <p className={`${theme === "dark" ? "text-red-200" : "text-red-800"}`}>
-                    Error loading claims: {error.message}
-                </p>
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         );
     }
 
-    if (isLoading) {
+    if (error) {
         return (
-            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>Loading claims...</p>
+            <div className="text-center text-red-500 p-4">
+                <p>Error: {error}</p>
             </div>
         );
     }
 
     if (!claims || claims.length === 0) {
         return (
-            <div className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-                <p className={`${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>No claims found.</p>
+            <div className="text-center text-gray-500 p-4">
+                <p>No claims found</p>
             </div>
         );
     }
 
     return (
-        <div className={`p-6 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-            <h2 className={`text-2xl font-bold mb-6 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                Claim History
-            </h2>
-            <div className="space-y-4">
-                {claims.map((claim: Claim) => (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold mb-4">Claim History</h2>
+            <div className="grid gap-4">
+                {claims.map((claim) => (
                     <div
-                        key={claim.id.toString()}
-                        className={`p-4 rounded-lg ${theme === "dark" ? "bg-gray-800" : "bg-white"
-                            } shadow-sm`}
+                        key={claim.id}
+                        className="bg-base-100 p-4 rounded-lg shadow-md border border-base-300"
                     >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start mb-2">
                             <div>
-                                <h3 className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                                    Claim #{claim.id.toString()}
-                                </h3>
-                                <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
-                                    Policy ID: {claim.policyId.toString()}
+                                <h3 className="text-lg font-semibold">Claim #{claim.id}</h3>
+                                <p className="text-sm text-base-content/60">
+                                    Policy ID: {claim.policyId}
                                 </p>
                             </div>
-                            <span className={getStatusStyles(claim.status)}>
-                                {claim.status === 0 ? "Pending" : claim.status === 1 ? "Approved" : "Rejected"}
+                            <span
+                                className={`px-2 py-1 rounded-full text-sm ${getStatusStyles(
+                                    claim.status,
+                                )}`}
+                            >
+                                {getStatusText(claim.status)}
                             </span>
                         </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                                <span className="text-gray-500">Amount: </span>
-                                <span>{claim.amount.toString()} wei</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Chain ID:</span>
-                                <span>{claim.chainId.toString()}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Transaction Hash:</span>
-                                <span className="font-mono text-sm break-all">{claim.txHash}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Required Confirmations:</span>
-                                <span>{claim.requiredConfirmations.toString()}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-500">Claim Date: </span>
-                                <span>{formatDate(claim.claimDate)}</span>
-                            </div>
-                            {claim.processedDate > BigInt(0) && (
-                                <div>
-                                    <span className="text-gray-500">Processed Date: </span>
-                                    <span>{formatDate(claim.processedDate)}</span>
-                                </div>
-                            )}
-                            {claim.processedBy && (
-                                <div>
-                                    <span className="text-gray-500">Processed By: </span>
-                                    <span>{claim.processedBy}</span>
-                                </div>
-                            )}
+                        <div className="space-y-2">
+                            <p>
+                                <span className="font-medium">Amount:</span>{" "}
+                                {claim.amount.toString()} wei
+                            </p>
+                            <p>
+                                <span className="font-medium">Proof:</span>{" "}
+                                {claim.proof}
+                            </p>
                             {claim.verifiedBy && (
-                                <div>
-                                    <span className="text-gray-500">Verified By:</span>
-                                    <span className="font-mono text-sm break-all">{claim.verifiedBy}</span>
-                                </div>
+                                <p>
+                                    <span className="font-medium">Verified by:</span>{" "}
+                                    {claim.verifiedBy}
+                                </p>
                             )}
+                            {claim.rejectionReason && (
+                                <p>
+                                    <span className="font-medium">Rejection reason:</span>{" "}
+                                    {claim.rejectionReason}
+                                </p>
+                            )}
+                            <p>
+                                <span className="font-medium">Required confirmations:</span>{" "}
+                                {claim.requiredConfirmations}
+                            </p>
                         </div>
                     </div>
                 ))}

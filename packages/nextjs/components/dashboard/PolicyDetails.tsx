@@ -2,26 +2,53 @@
 
 import { useState, useEffect } from "react";
 import { usePolicies } from "~~/hooks/usePolicies";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
+import { TokenSelector } from "./TokenSelector";
+import { TokenInfo } from "~~/utils/tokenAddresses";
+
+interface Policy {
+    id: string;
+    tokenId: string;
+    tokenName: string;
+    coverageAmount: number;
+    premiumAmount: number;
+    startDate: Date;
+    endDate: Date;
+    status: string;
+    remainingCoverage?: number;
+}
+
+interface PolicyWithCoverage extends Policy {
+    remainingCoverage?: number;
+}
 
 export const PolicyDetails = () => {
     const { policies, isLoading, error } = usePolicies();
-    const [policiesFromContract, setPoliciesFromContract] = useState<any[]>([]);
+    const [policiesFromContract, setPoliciesFromContract] = useState<PolicyWithCoverage[]>([]);
     const [errorFromContract, setErrorFromContract] = useState<string | null>(null);
     const [contractLoading, setContractLoading] = useState<boolean>(false);
+    const [selectedPolicy, setSelectedPolicy] = useState<PolicyWithCoverage | null>(null);
+    const [isRenewing, setIsRenewing] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [renewalDuration, setRenewalDuration] = useState<number>(180); // Default to 6 months
+    const [renewalToken, setRenewalToken] = useState<TokenInfo | null>(null);
     const { address } = useAccount();
+
+    const { writeContractAsync: renewPolicyAsync } = useScaffoldWriteContract({
+        contractName: "ClaimProcessor",
+    });
+
     const { data: userClaimsResult, isLoading: isClaimsLoading } = useScaffoldReadContract({
         contractName: "ClaimProcessor",
         functionName: "getUserClaims",
-        args: [address], // This should be the connected user's address
+        args: [address],
     });
 
     useEffect(() => {
         const fetchPoliciesFromContract = async () => {
             try {
                 setContractLoading(true);
-                // Ensure userClaims is an array
                 const userClaims = Array.isArray(userClaimsResult) ? userClaimsResult : [];
 
                 if (userClaims.length === 0) {
@@ -29,7 +56,6 @@ export const PolicyDetails = () => {
                     return;
                 }
 
-                // Fetch policy details for each claim
                 const policyPromises = userClaims.map(async (claimId: bigint) => {
                     const { data: claimData } = await useScaffoldReadContract({
                         contractName: "ClaimProcessor",
@@ -40,7 +66,6 @@ export const PolicyDetails = () => {
                     if (!claimData) return null;
 
                     const claim = claimData;
-
                     const { data: policyData } = await useScaffoldReadContract({
                         contractName: "ClaimProcessor",
                         functionName: "getPolicy",
@@ -50,22 +75,27 @@ export const PolicyDetails = () => {
                     if (!policyData) return null;
 
                     const policy = policyData;
+                    const { data: remainingCoverage } = await useScaffoldReadContract({
+                        contractName: "ClaimProcessor",
+                        functionName: "getPolicy",
+                        args: [claim[0]],
+                    });
 
                     return {
                         id: `POL-${claimId.toString()}`,
                         tokenId: policy[0],
                         tokenName: `Policy for ${policy[0].substring(0, 6)}...${policy[0].substring(policy[0].length - 4)}`,
-                        coverageAmount: policy[1],
-                        premiumAmount: policy[2],
+                        coverageAmount: Number(policy[1]),
+                        premiumAmount: Number(policy[2]),
                         startDate: new Date(Number(policy[3]) * 1000),
                         endDate: new Date(Number(policy[4]) * 1000),
                         status: policy[5] ? "Active" : "Expired",
-                    };
+                        remainingCoverage: remainingCoverage ? Number(remainingCoverage[1]) : undefined,
+                    } as PolicyWithCoverage;
                 });
 
                 const resolvedPolicies = await Promise.all(policyPromises);
-                const validPolicies = resolvedPolicies.filter(policy => policy !== null);
-
+                const validPolicies = resolvedPolicies.filter((policy): policy is PolicyWithCoverage => policy !== null);
                 setPoliciesFromContract(validPolicies);
             } catch (err) {
                 console.error("Error fetching policies from contract:", err);
@@ -100,9 +130,33 @@ export const PolicyDetails = () => {
         }
     };
 
+    const handleRenewPolicy = async () => {
+        if (!selectedPolicy || !renewalToken) return;
+
+        try {
+            setIsRenewing(true);
+            await renewPolicyAsync({
+                functionName: "createPolicy",
+                args: [
+                    renewalToken.address as `0x${string}`,
+                    BigInt(selectedPolicy.coverageAmount),
+                    BigInt(selectedPolicy.premiumAmount),
+                    BigInt(renewalDuration) // Duration in days
+                ] as const,
+            });
+            // Refresh policies after renewal
+            window.location.reload();
+        } catch (error) {
+            console.error("Error renewing policy:", error);
+        } finally {
+            setIsRenewing(false);
+            setSelectedPolicy(null);
+        }
+    };
+
     if (isLoading || contractLoading || isClaimsLoading) {
         return (
-            <div className="p-6 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
+            <div className="p-6 rounded-xl border border-base-300 bg-base-200/50 backdrop-blur-sm shadow-sm flex justify-center items-center h-40">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
@@ -110,39 +164,40 @@ export const PolicyDetails = () => {
 
     if (error || errorFromContract) {
         return (
-            <div className="p-6 rounded-xl border border-red-200 bg-red-50/50 backdrop-blur-sm shadow-sm">
-                <h2 className="text-xl font-semibold mb-4 text-red-700">Error</h2>
-                <p className="text-red-600">{error || errorFromContract}</p>
+            <div className="p-6 rounded-xl border border-error bg-error/10 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-semibold mb-4 text-error">Error</h2>
+                <p className="text-error">{error || errorFromContract}</p>
             </div>
         );
     }
 
-    // Combine policies from database and contract
-    const allPolicies = [...policies, ...policiesFromContract];
+    const allPolicies = [...policies, ...policiesFromContract] as PolicyWithCoverage[];
 
     if (allPolicies.length === 0) {
         return (
-            <div className="p-8 rounded-xl border border-gray-100 bg-base-200/50 backdrop-blur-sm shadow-sm">
+            <div className="p-8 rounded-xl border border-base-300 bg-base-200/50 backdrop-blur-sm shadow-sm">
                 <h2 className="text-xl font-semibold mb-4">Your Policies</h2>
-                <p className="text-gray-500">You don&apos;t have any insurance policies.</p>
+                <p className="text-base-content/60">You don&apos;t have any insurance policies.</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
-            <div className="p-6 rounded-lg border border-gray-200">
+            <div className="p-6 rounded-lg border border-base-300">
                 <h2 className="text-xl font-semibold mb-6">My Policies</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {allPolicies.map(policy => (
-                        <div key={policy.id} className="p-4 rounded-lg border border-gray-200 max-w-96">
+                        <div key={policy.id} className="p-4 rounded-lg border border-base-300 max-w-96">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 className="font-semibold">{policy.tokenName}</h3>
-                                    <p className="text-sm text-gray-500">Policy ID: {policy.id}</p>
+                                    <p className="text-sm text-base-content/60">Policy ID: {policy.id}</p>
                                 </div>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${policy.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${policy.status === "Active"
+                                    ? "bg-success/20 text-success"
+                                    : "bg-base-content/20 text-base-content"
                                     }`}>
                                     {policy.status}
                                 </span>
@@ -150,32 +205,36 @@ export const PolicyDetails = () => {
 
                             <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-500">Coverage Amount</h4>
+                                    <h4 className="text-sm font-medium text-base-content/60">Coverage Amount</h4>
                                     <p className="mt-1">${policy.coverageAmount?.toString() || '0'}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-500">Premium Amount</h4>
+                                    <h4 className="text-sm font-medium text-base-content/60">Premium Amount</h4>
                                     <p className="mt-1">${policy.premiumAmount?.toString() || '0'}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-500">Remaining Days</h4>
+                                    <h4 className="text-sm font-medium text-base-content/60">Remaining Coverage</h4>
+                                    <p className="mt-1">${policy.remainingCoverage?.toString() || '0'}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium text-base-content/60">Remaining Days</h4>
                                     <p className="mt-1">{calculateRemainingDays(new Date(policy.endDate))} days</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
+                                    <h4 className="text-sm font-medium text-base-content/60">Start Date</h4>
                                     <p className="mt-1">{formatDate(new Date(policy.startDate))}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-500">End Date</h4>
+                                    <h4 className="text-sm font-medium text-base-content/60">End Date</h4>
                                     <p className="mt-1">{formatDate(new Date(policy.endDate))}</p>
                                 </div>
                             </div>
 
-                            <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="mt-4 pt-4 border-t border-base-300">
                                 <div className="flex justify-between items-center">
                                     <div className="text-sm">
-                                        <span className="text-gray-500">Policy Progress:</span>
-                                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                        <span className="text-base-content/60">Policy Progress:</span>
+                                        <div className="w-full bg-base-200 rounded-full h-2.5 mt-1">
                                             <div
                                                 className="bg-primary h-2.5 rounded-full"
                                                 style={{
@@ -184,15 +243,77 @@ export const PolicyDetails = () => {
                                             ></div>
                                         </div>
                                     </div>
-                                    <button className="text-sm text-primary hover:text-primary/80 font-medium">
-                                        View Details
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setSelectedPolicy(policy)}
+                                            className="btn btn-sm btn-primary"
+                                        >
+                                            Renew
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            {/* Renewal Modal */}
+            {selectedPolicy && !isCancelling && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="bg-base-100 p-6 rounded-lg max-w-md w-full">
+                        <h3 className="text-lg font-semibold mb-4">Renew Policy</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    Renewal Duration
+                                </label>
+                                <select
+                                    value={renewalDuration}
+                                    onChange={e => setRenewalDuration(Number(e.target.value))}
+                                    className="select select-bordered w-full"
+                                >
+                                    <option value={180}>6 months</option>
+                                    <option value={365}>1 year</option>
+                                    <option value={730}>2 years</option>
+                                    <option value={1095}>3 years</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    Payment Token
+                                </label>
+                                <TokenSelector
+                                    onTokenSelect={setRenewalToken}
+                                    selectedTokenAddress={renewalToken?.address}
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <button
+                                    onClick={() => setSelectedPolicy(null)}
+                                    className="btn btn-ghost"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRenewPolicy}
+                                    disabled={isRenewing || !renewalToken}
+                                    className="btn btn-primary"
+                                >
+                                    {isRenewing ? (
+                                        <>
+                                            <span className="loading loading-spinner loading-sm"></span>
+                                            Renewing...
+                                        </>
+                                    ) : (
+                                        "Renew Policy"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }; 

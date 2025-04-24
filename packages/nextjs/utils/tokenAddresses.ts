@@ -14,7 +14,15 @@ export interface TokenInfo {
   description: string;
 }
 
-// Example token addresses for Flare Testnet
+// Import database functions
+import {
+  getAllTokens,
+  getTokenByAddress as getTokenByAddressDb,
+  getTokenBySymbol as getTokenBySymbolDb,
+  isValidTokenAddress as isValidTokenAddressDb
+} from '../lib/token-db';
+
+// Example token addresses for Flare Testnet (used only for seeding)
 export const FLARE_TESTNET_TOKENS: TokenInfo[] = [
   {
     symbol: "REAL",
@@ -112,23 +120,22 @@ export const updateBSDTokenAddress = (address: string): void => {
   }
 };
 
+// Function to get all tokens from database
+export const getFlareTestnetTokens = async (): Promise<TokenInfo[]> => {
+  return await getAllTokens();
+};
+
 // Function to get token by address
-export const getTokenByAddress = (address: string): TokenInfo | undefined => {
-  return FLARE_TESTNET_TOKENS.find(
-    token => token.address.toLowerCase() === address.toLowerCase()
-  );
+export const getTokenByAddress = async (address: string): Promise<TokenInfo | null> => {
+  return await getTokenByAddressDb(address);
 };
 
 // Function to get token by symbol
-export const getTokenBySymbol = (symbol: string): TokenInfo | undefined => {
-  return FLARE_TESTNET_TOKENS.find(
-    token => token.symbol.toLowerCase() === symbol.toLowerCase()
-  );
+export const getTokenBySymbol = async (symbol: string): Promise<TokenInfo | null> => {
+  return await getTokenBySymbolDb(symbol);
 };
 
 // Function to validate if an address is a valid token address
-export const isValidTokenAddress = (address: string): boolean => {
-  return FLARE_TESTNET_TOKENS.some(
-    token => token.address.toLowerCase() === address.toLowerCase()
-  );
+export const isValidTokenAddress = async (address: string): Promise<boolean> => {
+  return await isValidTokenAddressDb(address);
 }; 
