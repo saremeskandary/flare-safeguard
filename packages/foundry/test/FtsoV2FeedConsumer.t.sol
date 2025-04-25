@@ -253,11 +253,11 @@ contract FtsoV2FeedConsumerTest is Test {
         string memory symbol = "BTC/USD";
         uint8 decimals = 8;
 
-        // Add the price feed first
+        // Add price feed first
         vm.prank(feedManager);
         feedConsumer.addPriceFeed(symbol, decimals);
 
-        // Remove the price feed
+        // Remove price feed
         vm.prank(feedManager);
         vm.expectEmit(true, false, false, true);
         emit PriceFeedRemoved(symbol);
@@ -265,8 +265,8 @@ contract FtsoV2FeedConsumerTest is Test {
 
         assertTrue(success);
 
-        // Verify the price feed was removed
-        vm.expectRevert("Symbol not monitored");
+        // Verify the price feed was removed by trying to get it (should revert)
+        vm.expectRevert(abi.encodeWithSignature("SymbolNotMonitored()"));
         feedConsumer.getPriceFeed(symbol);
 
         // Verify the symbol is not in the monitored symbols list
@@ -287,10 +287,11 @@ contract FtsoV2FeedConsumerTest is Test {
         feedConsumer.removePriceFeed(symbol);
     }
 
-    function testFailRemoveNonExistentPriceFeed() public {
+    function test_RevertWhen_RemoveNonExistentPriceFeed() public {
         string memory symbol = "BTC/USD";
 
         vm.prank(feedManager);
+        vm.expectRevert(abi.encodeWithSignature("SymbolNotMonitored()"));
         feedConsumer.removePriceFeed(symbol);
     }
 

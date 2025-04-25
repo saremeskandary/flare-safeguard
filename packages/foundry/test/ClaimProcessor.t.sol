@@ -141,7 +141,7 @@ contract ClaimProcessorTest is Test {
 
     function test_RevertWhen_SubmitClaimWithoutPolicy() public {
         vm.prank(user);
-        vm.expectRevert("No active policy");
+        vm.expectRevert(abi.encodeWithSignature("PolicyNotActive()"));
         claimProcessor.submitClaim(500 ether, "Test claim");
     }
 
@@ -200,7 +200,7 @@ contract ClaimProcessorTest is Test {
         claimProcessor.reviewClaim(0, true, "");
 
         // Now try to review the same claim again, which should fail
-        vm.expectRevert("Invalid claim status");
+        vm.expectRevert(abi.encodeWithSignature("InvalidClaimStatus()"));
         claimProcessor.reviewClaim(0, true, "");
     }
 
@@ -268,7 +268,7 @@ contract ClaimProcessorTest is Test {
 
         // Try to process payout without approval
         vm.startPrank(address(this));
-        vm.expectRevert("Claim not approved");
+        vm.expectRevert(abi.encodeWithSignature("ClaimNotApproved()"));
         claimProcessor.processClaimPayout(0);
         vm.stopPrank();
     }

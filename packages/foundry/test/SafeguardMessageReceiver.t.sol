@@ -135,7 +135,7 @@ contract SafeguardMessageReceiverTest is Test {
 
     function test_RevertWhen_ProcessNonExistentMessage() public {
         vm.prank(admin);
-        vm.expectRevert("Message does not exist");
+        vm.expectRevert(abi.encodeWithSignature("MessageDoesNotExist()"));
         messageReceiver.processMessage(999);
     }
 
@@ -355,7 +355,7 @@ contract SafeguardMessageReceiverTest is Test {
         sender = address(0);
         bytes memory encodedData = abi.encode("test data");
 
-        vm.expectRevert("Invalid sender address");
+        vm.expectRevert(abi.encodeWithSignature("InvalidSenderAddress()"));
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
@@ -406,7 +406,7 @@ contract SafeguardMessageReceiverTest is Test {
         targetChain = 0;
         bytes memory encodedData = abi.encode("test data");
 
-        vm.expectRevert("Invalid chain ID");
+        vm.expectRevert(abi.encodeWithSignature("InvalidChainId()"));
         messageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,

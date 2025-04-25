@@ -144,7 +144,7 @@ contract InsuranceCoreTest is Test {
     function test_RevertWhen_CalculatePremiumInvalidToken() public {
         uint256 coverageAmount = 500 ether;
         uint256 duration = 180 days;
-        vm.expectRevert("Token not evaluated");
+        vm.expectRevert(abi.encodeWithSignature("TokenNotEvaluated()"));
         insuranceCore.calculatePremium(coverageAmount, duration, mockToken);
     }
 
@@ -156,7 +156,7 @@ contract InsuranceCoreTest is Test {
         // Try to calculate premium with amount exceeding coverage limit
         uint256 coverageAmount = 2000 ether;
         uint256 duration = 180 days;
-        vm.expectRevert("No suitable coverage option");
+        vm.expectRevert(abi.encodeWithSignature("NoSuitableCoverageOption()"));
         insuranceCore.calculatePremium(coverageAmount, duration, mockToken);
     }
 }

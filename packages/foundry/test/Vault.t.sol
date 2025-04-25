@@ -105,7 +105,7 @@ contract VaultTest is Test {
         vm.stopPrank();
 
         vm.startPrank(owner);
-        vm.expectRevert("Cannot withdraw below minimum reserve");
+        vm.expectRevert(abi.encodeWithSignature("BelowMinimumReserve()"));
         vault.withdrawReserves(901 ether); // Would leave less than MINIMUM_RESERVE
     }
 
@@ -216,7 +216,7 @@ contract VaultTest is Test {
         uint256 claimAmount = 801 ether;
 
         vm.startPrank(user2);
-        vm.expectRevert("Claim amount exceeds maximum ratio");
+        vm.expectRevert(abi.encodeWithSignature("ClaimExceedsMaximumRatio()"));
         vault.processClaim(requestId, encodedProof, claimAmount);
     }
 

@@ -220,7 +220,7 @@ contract DataVerificationTest is Test {
         vm.startPrank(user);
 
         bytes memory request = abi.encode("test_request");
-        vm.expectRevert("Insufficient fee");
+        vm.expectRevert(abi.encodeWithSignature("InsufficientFee()"));
         dataVerification.submitAttestationRequest{value: 0.05 ether}(request);
     }
 
@@ -237,7 +237,7 @@ contract DataVerificationTest is Test {
 
     function test_RevertWhenNoFeesToWithdraw() public {
         vm.startPrank(owner);
-        vm.expectRevert("No fees to withdraw");
+        vm.expectRevert(abi.encodeWithSignature("NoFeesToWithdraw()"));
         dataVerification.withdrawFees();
     }
 }

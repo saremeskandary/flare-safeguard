@@ -113,7 +113,9 @@ contract TokenRWATest is Test {
         token.disableTransfers();
 
         vm.startPrank(user1);
-        vm.expectRevert("Transfers are disabled");
+        vm.expectRevert(
+            abi.encodeWithSignature("TransfersCurrentlyDisabled()")
+        );
         token.transfer(user2, 50 ether);
     }
 
@@ -276,7 +278,7 @@ contract TokenRWATest is Test {
 
         vm.startPrank(user1);
         // Try to transfer more than limit
-        vm.expectRevert("Transfer limit exceeded");
+        vm.expectRevert(abi.encodeWithSignature("TransferLimitExceeded()"));
         token.transfer(user2, 51 ether);
 
         // Transfer within limit should work
