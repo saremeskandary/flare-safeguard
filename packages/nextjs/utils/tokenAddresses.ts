@@ -23,6 +23,7 @@ import {
 } from '../lib/token-db';
 
 // Example token addresses for Flare Testnet (used only for seeding)
+
 export const FLARE_TESTNET_TOKENS: TokenInfo[] = [
   {
     symbol: "REAL",

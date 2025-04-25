@@ -32,7 +32,7 @@ export const ClaimHistory = () => {
         contractName: "ClaimProcessor",
         functionName: "getUserClaims",
         args: [address],
-    });
+    }) as { data: bigint[] | undefined; isLoading: boolean };
 
     // Then, fetch each claim's details
     useEffect(() => {
@@ -40,7 +40,7 @@ export const ClaimHistory = () => {
             if (!claimIds || !Array.isArray(claimIds) || !claimProcessorContract || !publicClient) return;
 
             try {
-                const claimPromises = claimIds.map(async (claimId) => {
+                const claimPromises = claimIds.map(async (claimId: bigint) => {
                     // Use publicClient instead of hooks
                     const result = await publicClient.readContract({
                         address: claimProcessorContract.address,

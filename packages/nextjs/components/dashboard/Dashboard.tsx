@@ -8,7 +8,8 @@ import { ClaimHistory } from "./ClaimHistory";
 import { CreatePolicy } from "./CreatePolicy";
 import { CrossChainClaim } from "./CrossChainClaim";
 import { ClaimVerification } from "./ClaimVerification";
-import TokenCreation from "./TokenCreation";
+import { TokenCreation } from "./TokenCreation";
+import { RoleManagement } from "./RoleManagement";
 
 export const Dashboard = () => {
     const { address } = useAccount();
@@ -28,7 +29,6 @@ export const Dashboard = () => {
 
     const renderTabContent = () => {
         switch (activeTab) {
-
             case "browse":
                 return <InsuranceOptions />;
             case "policies":
@@ -43,6 +43,8 @@ export const Dashboard = () => {
                 return <ClaimVerification />;
             case "create-token":
                 return <TokenCreation />;
+            case "manage-roles":
+                return <RoleManagement />;
             default:
                 return <InsuranceOptions />;
         }
@@ -102,6 +104,12 @@ export const Dashboard = () => {
                             onClick={() => setActiveTab("create-token")}
                         >
                             Create Token
+                        </button>
+                        <button
+                            className={`tab ${activeTab === "manage-roles" ? "tab-active" : ""}`}
+                            onClick={() => setActiveTab("manage-roles")}
+                        >
+                            Manage Roles
                         </button>
                     </>
                 )}

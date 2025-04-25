@@ -9,9 +9,6 @@ import "../contracts/InsuranceCore.sol";
  */
 contract DeployInsuranceCore is Script {
     function run() external returns (address) {
-        // Start broadcast without private key - will use default signer
-        vm.startBroadcast();
-
         console.log("Deploying InsuranceCore contract...");
         InsuranceCore insuranceCore = new InsuranceCore();
         console.log("InsuranceCore deployed at:", address(insuranceCore));
@@ -53,8 +50,6 @@ contract DeployInsuranceCore is Script {
         } catch Error(string memory reason) {
             console.log("Failed to add premium coverage option:", reason);
         }
-
-        vm.stopBroadcast();
 
         return address(insuranceCore);
     }

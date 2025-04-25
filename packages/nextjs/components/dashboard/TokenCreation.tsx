@@ -1,125 +1,117 @@
 "use client";
 
 import { useState } from "react";
+import { useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { toast } from "react-hot-toast";
+import { TOKEN_RWA_FACTORY_ADMIN_ROLE } from "~~/utils/contractConstants";
 
-const TokenCreation = () => {
+export const TokenCreation = () => {
     const [tokenName, setTokenName] = useState("");
     const [tokenSymbol, setTokenSymbol] = useState("");
-    const [verificationAddress, setVerificationAddress] = useState<`0x${string}` | undefined>();
-    const [isDeployingVerification, setIsDeployingVerification] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const { address } = useAccount();
 
-    const { writeContractAsync: writeTokenContractAsync } = useScaffoldWriteContract({
-        contractName: "MockBSDToken",
+    // Check if the current user has the ADMIN_ROLE
+    const { data: hasAdminRole } = useScaffoldReadContract({
+        contractName: "TokenRWAFactory",
+        functionName: "hasRole",
+        args: [TOKEN_RWA_FACTORY_ADMIN_ROLE, address],
     });
 
-    const deployDataVerification = async () => {
-        if (!address) {
-            toast.error("Please connect your wallet first");
-            return;
-        }
-
-        try {
-            setIsDeployingVerification(true);
-            const result = await writeTokenContractAsync({
-                functionName: "mint",
-                args: [address, BigInt(0)],
-            });
-
-            if (result) {
-                setVerificationAddress(result as `0x${string}`);
-                toast.success("Verification contract deployed successfully!");
-            }
-        } catch (error) {
-            console.error("Error deploying verification contract:", error);
-            toast.error("Failed to deploy verification contract");
-        } finally {
-            setIsDeployingVerification(false);
-        }
-    };
+    // Use the recommended object parameter version
+    const { writeContractAsync } = useScaffoldWriteContract({
+        contractName: "TokenRWAFactory",
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!address) {
-            toast.error("Please connect your wallet first");
-            return;
-        }
-        if (!verificationAddress) {
-            toast.error("Please deploy or provide a verification contract address");
+        setError("");
+        setSuccess("");
+
+        if (!tokenName || !tokenSymbol) {
+            setError("Please fill in all fields");
             return;
         }
 
         try {
-            const result = await writeTokenContractAsync({
-                functionName: "mint",
-                args: [address, BigInt(0)],
+            setIsCreating(true);
+
+            // Call the contract with the correct parameters
+            const tx = await writeContractAsync({
+                functionName: "createToken",
+                args: [tokenName, tokenSymbol],
             });
 
-            if (result) {
-                toast.success("Token creation initiated!");
+            if (tx) {
+                // Wait for transaction to be mined
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
+                setSuccess("Token created successfully!");
+                setTokenName("");
+                setTokenSymbol("");
             }
         } catch (error) {
             console.error("Error creating token:", error);
-            toast.error("Failed to create token");
+            setError("Failed to create token. Please try again.");
+        } finally {
+            setIsCreating(false);
         }
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-6">Create New Token</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium mb-1">Token Name</label>
+        <div className="flex flex-col gap-6 p-6 bg-base-200 rounded-lg">
+            <h2 className="text-2xl font-bold">Create New RWA Token</h2>
+            {error && (
+                <div className="alert alert-error">
+                    <span>{error}</span>
+                </div>
+            )}
+            {success && (
+                <div className="alert alert-success">
+                    <span>{success}</span>
+                </div>
+            )}
+            {hasAdminRole === false && (
+                <div className="alert alert-warning">
+                    <span>You don't have permission to create tokens. You need the ADMIN_ROLE.</span>
+                </div>
+            )}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text">Token Name</span>
+                    </label>
                     <input
                         type="text"
-                        value={tokenName}
-                        onChange={(e) => setTokenName(e.target.value)}
-                        className="w-full p-2 border rounded"
                         placeholder="Enter token name"
+                        className="input input-bordered w-full"
+                        value={tokenName}
+                        onChange={e => setTokenName(e.target.value)}
+                        disabled={isCreating || hasAdminRole === false}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">Token Symbol</label>
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text">Token Symbol</span>
+                    </label>
                     <input
                         type="text"
-                        value={tokenSymbol}
-                        onChange={(e) => setTokenSymbol(e.target.value)}
-                        className="w-full p-2 border rounded"
                         placeholder="Enter token symbol"
+                        className="input input-bordered w-full"
+                        value={tokenSymbol}
+                        onChange={e => setTokenSymbol(e.target.value)}
+                        disabled={isCreating || hasAdminRole === false}
                     />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">Verification Address</label>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={verificationAddress || ""}
-                            onChange={(e) => setVerificationAddress(e.target.value as `0x${string}`)}
-                            className="flex-1 p-2 border rounded"
-                            placeholder="Enter verification contract address"
-                        />
-                        <button
-                            type="button"
-                            onClick={deployDataVerification}
-                            disabled={isDeployingVerification}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                        >
-                            {isDeployingVerification ? "Deploying..." : "Deploy New"}
-                        </button>
-                    </div>
                 </div>
                 <button
                     type="submit"
-                    className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    className={`btn btn-primary ${isCreating ? "loading" : ""}`}
+                    disabled={isCreating || hasAdminRole === false}
                 >
-                    Create Token
+                    {isCreating ? "Creating Token..." : "Create Token"}
                 </button>
             </form>
         </div>
     );
 };
-
-export default TokenCreation;
