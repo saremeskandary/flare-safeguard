@@ -100,6 +100,14 @@ contract Deploy is Script {
             "Deployer must have ADMIN_ROLE in TokenRWAFactory"
         );
         console.log("[OK] TokenRWAFactory roles verified");
+        console.log(
+            "Deployer has ADMIN_ROLE in TokenRWAFactory:",
+            factory.hasRole(factory.ADMIN_ROLE(), deployer)
+        );
+        console.log(
+            "Deployer has DEFAULT_ADMIN_ROLE in TokenRWAFactory:",
+            factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer)
+        );
 
         // Deploy implementation contract
         console.log("\n=== Deploying TokenRWA Implementation ===");

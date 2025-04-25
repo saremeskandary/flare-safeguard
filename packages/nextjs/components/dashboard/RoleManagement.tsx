@@ -4,24 +4,25 @@ import { useState } from "react";
 import { useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
 import { AddressInput } from "~~/components/scaffold-eth";
-import { TOKEN_RWA_FACTORY_ADMIN_ROLE, TOKEN_RWA_FACTORY_DEFAULT_ADMIN_ROLE } from "~~/utils/contractConstants";
+import { ADMIN_ROLE, DEFAULT_ADMIN_ROLE } from "~~/utils/contractConstants";
 
 export const RoleManagement = () => {
     const [targetAddress, setTargetAddress] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [contractType, setContractType] = useState<"InsuranceCore" | "TokenRWAFactory">("TokenRWAFactory");
     const { address } = useAccount();
 
-    // Check if the current user has the DEFAULT_ADMIN_ROLE
-    const { data: hasDefaultAdminRole } = useScaffoldReadContract({
-        contractName: "TokenRWAFactory",
+    // Check if the current user has the ADMIN_ROLE on the selected contract
+    const { data: hasAdminRole } = useScaffoldReadContract({
+        contractName: contractType,
         functionName: "hasRole",
-        args: [TOKEN_RWA_FACTORY_DEFAULT_ADMIN_ROLE, address],
+        args: [ADMIN_ROLE, address],
     });
 
     // Use the recommended object parameter version
     const { writeContractAsync } = useScaffoldWriteContract({
-        contractName: "TokenRWAFactory",
+        contractName: contractType,
     });
 
     const handleGrantRole = async (roleType: "admin" | "defaultAdmin") => {
@@ -34,7 +35,7 @@ export const RoleManagement = () => {
         }
 
         try {
-            const role = roleType === "admin" ? TOKEN_RWA_FACTORY_ADMIN_ROLE : TOKEN_RWA_FACTORY_DEFAULT_ADMIN_ROLE;
+            const role = roleType === "admin" ? ADMIN_ROLE : DEFAULT_ADMIN_ROLE;
 
             // Call the contract with the correct parameters
             const tx = await writeContractAsync({
@@ -45,7 +46,7 @@ export const RoleManagement = () => {
             if (tx) {
                 // Wait for transaction to be mined
                 await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
-                setSuccess(`${roleType === "admin" ? "Admin" : "Default Admin"} role granted successfully!`);
+                setSuccess(`${roleType === "admin" ? "Admin" : "Default Admin"} role granted successfully on ${contractType}!`);
                 setTargetAddress("");
             }
         } catch (error) {
@@ -67,11 +68,24 @@ export const RoleManagement = () => {
                     <span>{success}</span>
                 </div>
             )}
-            {hasDefaultAdminRole === false && (
+            {hasAdminRole === false && (
                 <div className="alert alert-warning">
-                    <span>You don't have permission to manage roles. You need the DEFAULT_ADMIN_ROLE.</span>
+                    <span>You don't have permission to manage roles. You need the ADMIN_ROLE on {contractType}.</span>
                 </div>
             )}
+            <div className="form-control">
+                <label className="label">
+                    <span className="label-text">Contract Type</span>
+                </label>
+                <select 
+                    className="select select-bordered w-full"
+                    value={contractType}
+                    onChange={(e) => setContractType(e.target.value as "InsuranceCore" | "TokenRWAFactory")}
+                >
+                    <option value="TokenRWAFactory">TokenRWAFactory</option>
+                    <option value="InsuranceCore">InsuranceCore</option>
+                </select>
+            </div>
             <div className="form-control">
                 <label className="label">
                     <span className="label-text">Target Address</span>
@@ -86,14 +100,14 @@ export const RoleManagement = () => {
                 <button
                     className="btn btn-primary flex-1"
                     onClick={() => handleGrantRole("admin")}
-                    disabled={!hasDefaultAdminRole}
+                    disabled={!hasAdminRole}
                 >
                     Grant Admin Role
                 </button>
                 <button
                     className="btn btn-secondary flex-1"
                     onClick={() => handleGrantRole("defaultAdmin")}
-                    disabled={!hasDefaultAdminRole}
+                    disabled={!hasAdminRole}
                 >
                     Grant Default Admin Role
                 </button>
