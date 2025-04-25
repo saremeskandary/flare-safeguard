@@ -396,6 +396,24 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "setAdminFromParent",
+          inputs: [
+            {
+              name: "newAdmin",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "parentAdmin",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "supportsInterface",
           inputs: [
             {
@@ -412,6 +430,25 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "AdminRoleTransferred",
+          inputs: [
+            {
+              name: "previousAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
         },
         {
           type: "event",
@@ -586,7 +623,62 @@ const deployedContracts = {
         },
         {
           type: "error",
+          name: "InvalidAdminAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidCoverageAmount",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidCoverageLimit",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidDuration",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidPremiumRate",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRiskScore",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidTokenAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidValue",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NoSuitableCoverageOption",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NotAuthorized",
+          inputs: [],
+        },
+        {
+          type: "error",
           name: "ReentrancyGuardReentrantCall",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "TokenNotEvaluated",
           inputs: [],
         },
       ],
@@ -595,7 +687,7 @@ const deployedContracts = {
       deploymentScript: "Deploy.s.sol",
     },
     DataVerification: {
-      address: "0x96505a0c47702d5a364a0a092cdb091f91717303",
+      address: "0x124ddf9bdd2ddad012ef1d5bbd77c00f05c610da",
       abi: [
         {
           type: "constructor",
@@ -1349,16 +1441,106 @@ const deployedContracts = {
         },
         {
           type: "error",
+          name: "EmptyDescription",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "EmptyProof",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidAssetAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidAssetType",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidDeadline",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidObligatedParty",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidProof",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRequestId",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRequestIdZero",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidStateConnectorAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidVerifierAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NotAuthorizedToFulfill",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ObligationAlreadyFulfilled",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ObligationNotFound",
+          inputs: [],
+        },
+        {
+          type: "error",
           name: "ReentrancyGuardReentrantCall",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "StateConnectorNotEnabled",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "StateConnectorNotSet",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "TemplateNotFound",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VerifierAlreadyAuthorized",
           inputs: [],
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745511758.json",
+      deploymentFile: "run-1745599965.json",
       deploymentScript: "Deploy.s.sol",
     },
     TokenRWAFactory: {
-      address: "0xb3a8739a0db968f6484ab439b849fff85b53c7a9",
+      address: "0xe044814c9ed1e6442af956a817c161192cbae98f",
       abi: [
         {
           type: "constructor",
@@ -1660,7 +1842,7 @@ const deployedContracts = {
         },
         {
           type: "event",
-          name: "TokenCreated",
+          name: "TokenEvent",
           inputs: [
             {
               name: "token",
@@ -1679,6 +1861,12 @@ const deployedContracts = {
               type: "string",
               indexed: false,
               internalType: "string",
+            },
+            {
+              name: "admin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
             },
           ],
           anonymous: false,
@@ -1711,6 +1899,11 @@ const deployedContracts = {
         },
         {
           type: "error",
+          name: "ImplementationExists",
+          inputs: [],
+        },
+        {
+          type: "error",
           name: "InsufficientBalance",
           inputs: [
             {
@@ -1725,15 +1918,1750 @@ const deployedContracts = {
             },
           ],
         },
+        {
+          type: "error",
+          name: "InvalidAddresses",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidParameters",
+          inputs: [],
+        },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745511758.json",
+      deploymentFile: "run-1745599965.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
   31337: {
+    DataVerification: {
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "DEFAULT_ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "VERIFIER_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "addTemplateVerifier",
+          inputs: [
+            {
+              name: "assetType",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "verifier",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "addVerifier",
+          inputs: [
+            {
+              name: "verifier",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "createObligation",
+          inputs: [
+            {
+              name: "obligatedParty",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "deadline",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "description",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "createVerificationTemplate",
+          inputs: [
+            {
+              name: "assetType",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "requiredFields",
+              type: "string[]",
+              internalType: "string[]",
+            },
+            {
+              name: "optionalFields",
+              type: "string[]",
+              internalType: "string[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "fulfillObligation",
+          inputs: [
+            {
+              name: "obligationId",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getObligation",
+          inputs: [
+            {
+              name: "obligationId",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "tuple",
+              internalType: "struct DataVerification.Obligation",
+              components: [
+                {
+                  name: "obligatedParty",
+                  type: "address",
+                  internalType: "address",
+                },
+                {
+                  name: "deadline",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "description",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "fulfilled",
+                  type: "bool",
+                  internalType: "bool",
+                },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getRoleAdmin",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getVerificationData",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "tuple",
+              internalType: "struct DataVerification.VerificationData",
+              components: [
+                {
+                  name: "verifier",
+                  type: "address",
+                  internalType: "address",
+                },
+                {
+                  name: "timestamp",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "isValid",
+                  type: "bool",
+                  internalType: "bool",
+                },
+                {
+                  name: "dataHash",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "metadata",
+                  type: "string",
+                  internalType: "string",
+                },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getVerificationTemplate",
+          inputs: [
+            {
+              name: "assetType",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "tuple",
+              internalType: "struct DataVerification.VerificationTemplate",
+              components: [
+                {
+                  name: "requiredFields",
+                  type: "string[]",
+                  internalType: "string[]",
+                },
+                {
+                  name: "optionalFields",
+                  type: "string[]",
+                  internalType: "string[]",
+                },
+                {
+                  name: "authorizedVerifiers",
+                  type: "address[]",
+                  internalType: "address[]",
+                },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "grantRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "hasRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "isAssetVerified",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "removeVerifier",
+          inputs: [
+            {
+              name: "verifier",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "renounceRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "callerConfirmation",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "revokeRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setStateConnector",
+          inputs: [
+            {
+              name: "_stateConnectorAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "stateConnectorAddress",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "stateConnectorEnabled",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "supportsInterface",
+          inputs: [
+            {
+              name: "interfaceId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "verifyAsset",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "isValid",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "dataHash",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "metadata",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "verifyWithStateConnector",
+          inputs: [
+            {
+              name: "requestId",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "proof",
+              type: "bytes",
+              internalType: "bytes",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "ObligationCreated",
+          inputs: [
+            {
+              name: "obligationId",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "obligatedParty",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "deadline",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "ObligationFulfilled",
+          inputs: [
+            {
+              name: "obligationId",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleAdminChanged",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "previousAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "newAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleGranted",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleRevoked",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "StateConnectorSet",
+          inputs: [
+            {
+              name: "stateConnectorAddress",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TemplateCreated",
+          inputs: [
+            {
+              name: "assetType",
+              type: "string",
+              indexed: true,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VerificationAdded",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "verifier",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "isValid",
+              type: "bool",
+              indexed: false,
+              internalType: "bool",
+            },
+            {
+              name: "dataHash",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VerificationUpdated",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "verifier",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "isValid",
+              type: "bool",
+              indexed: false,
+              internalType: "bool",
+            },
+            {
+              name: "dataHash",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VerifierAdded",
+          inputs: [
+            {
+              name: "verifier",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VerifierRemoved",
+          inputs: [
+            {
+              name: "verifier",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "AccessControlBadConfirmation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AccessControlUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "neededRole",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "EmptyDescription",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "EmptyProof",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidAssetAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidAssetType",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidDeadline",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidObligatedParty",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidProof",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRequestId",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRequestIdZero",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidStateConnectorAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidVerifierAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NotAuthorizedToFulfill",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ObligationAlreadyFulfilled",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ObligationNotFound",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ReentrancyGuardReentrantCall",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "StateConnectorNotEnabled",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "StateConnectorNotSet",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "TemplateNotFound",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VerifierAlreadyAuthorized",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deploymentFile: "run-1745599920.json",
+      deploymentScript: "Deploy.s.sol",
+    },
+    TokenRWAFactory: {
+      address: "0x8ce361602b935680e8dec218b820ff5056beb7af",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "_verificationContract",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "DEFAULT_ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "createToken",
+          inputs: [
+            {
+              name: "name",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "symbol",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "deployImplementation",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getRoleAdmin",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "grantRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "hasRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "implementation",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract TokenRWA",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "callerConfirmation",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "revokeRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "supportsInterface",
+          inputs: [
+            {
+              name: "interfaceId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "updateVerificationContract",
+          inputs: [
+            {
+              name: "_verificationContract",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "verificationContract",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "RoleAdminChanged",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "previousAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "newAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleGranted",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleRevoked",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenEvent",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "name",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "symbol",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "admin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "AccessControlBadConfirmation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AccessControlUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "neededRole",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "FailedDeployment",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ImplementationExists",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InsufficientBalance",
+          inputs: [
+            {
+              name: "balance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "needed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "InvalidAddresses",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidParameters",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deploymentFile: "run-1745599920.json",
+      deploymentScript: "Deploy.s.sol",
+    },
+    RoleManager: {
+      address: "0x5b73c5498c1e3b4dba84de0f1833c4a029d90519",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "DEFAULT_ADMIN_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "EVALUATOR_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "MINTER_ROLE",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "contractAddresses",
+          inputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getContractName",
+          inputs: [
+            {
+              name: "contractAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getRegisteredContracts",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address[]",
+              internalType: "address[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getRoleAdmin",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "grantRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "hasRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "managedContracts",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "registerContract",
+          inputs: [
+            {
+              name: "contractAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "name",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "renounceRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "callerConfirmation",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "revokeRole",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "supportsInterface",
+          inputs: [
+            {
+              name: "interfaceId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "updateAllContractAdmins",
+          inputs: [
+            {
+              name: "newAdmin",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "updateContractAdmin",
+          inputs: [
+            {
+              name: "contractAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "newAdmin",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "AdminRoleUpdated",
+          inputs: [
+            {
+              name: "contractAddress",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "BatchAdminRoleUpdated",
+          inputs: [
+            {
+              name: "contractAddresses",
+              type: "address[]",
+              indexed: false,
+              internalType: "address[]",
+            },
+            {
+              name: "newAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "ContractRegistered",
+          inputs: [
+            {
+              name: "contractAddress",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "name",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleAdminChanged",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "previousAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "newAdminRole",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleGranted",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "RoleRevoked",
+          inputs: [
+            {
+              name: "role",
+              type: "bytes32",
+              indexed: true,
+              internalType: "bytes32",
+            },
+            {
+              name: "account",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "AccessControlBadConfirmation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AccessControlUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "neededRole",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ContractAlreadyRegistered",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "ContractNotRegistered",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "EmptyName",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidAdminAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidContractAddress",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deploymentFile: "run-1745572106.json",
+      deploymentScript: "DeployInsuranceCore.s.sol",
+    },
     InsuranceCore: {
-      address: "0xb1527802e7800034d6887b0a99a5ad2683184b95",
+      address: "0x34a1d3fff3958843c43ad80f30b94c510645c316",
       abi: [
         {
           type: "constructor",
@@ -2122,6 +4050,24 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "setAdminFromParent",
+          inputs: [
+            {
+              name: "newAdmin",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "parentAdmin",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "supportsInterface",
           inputs: [
             {
@@ -2138,6 +4084,25 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "AdminRoleTransferred",
+          inputs: [
+            {
+              name: "previousAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newAdmin",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
         },
         {
           type: "event",
@@ -2312,2209 +4277,68 @@ const deployedContracts = {
         },
         {
           type: "error",
-          name: "ReentrancyGuardReentrantCall",
-          inputs: [],
-        },
-      ],
-      inheritedFunctions: {},
-      deploymentFile: "run-1745512506.json",
-      deploymentScript: "Deploy.s.sol",
-    },
-    MockBSDToken: {
-      address: "0x82c6d3ed4cd33d8ec1e51d0b5cc1d822eaa0c3dc",
-      abi: [
-        {
-          type: "constructor",
-          inputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "allowance",
-          inputs: [
-            {
-              name: "owner",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "approve",
-          inputs: [
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "balanceOf",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "decimals",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint8",
-              internalType: "uint8",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "mint",
-          inputs: [
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "name",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "symbol",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "totalSupply",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "transfer",
-          inputs: [
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "transferFrom",
-          inputs: [
-            {
-              name: "from",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "event",
-          name: "Approval",
-          inputs: [
-            {
-              name: "owner",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "spender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "Transfer",
-          inputs: [
-            {
-              name: "from",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "to",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "error",
-          name: "ERC20InsufficientAllowance",
-          inputs: [
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "allowance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "needed",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ERC20InsufficientBalance",
-          inputs: [
-            {
-              name: "sender",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "balance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "needed",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ERC20InvalidApprover",
-          inputs: [
-            {
-              name: "approver",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ERC20InvalidReceiver",
-          inputs: [
-            {
-              name: "receiver",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ERC20InvalidSender",
-          inputs: [
-            {
-              name: "sender",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ERC20InvalidSpender",
-          inputs: [
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-      ],
-      inheritedFunctions: {},
-      deploymentFile: "run-1745275850.json",
-      deploymentScript: "Deploy.s.sol",
-    },
-    ClaimProcessor: {
-      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
-      abi: [
-        {
-          type: "constructor",
-          inputs: [
-            {
-              name: "_bsdToken",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "DEFAULT_ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "VERIFIER_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "bsdToken",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "claimCount",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "claims",
-          inputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "insured",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "tokenAddress",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "timestamp",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "description",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "status",
-              type: "uint8",
-              internalType: "enum ClaimProcessor.ClaimStatus",
-            },
-            {
-              name: "verifier",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "rejectionReason",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "createPolicy",
-          inputs: [
-            {
-              name: "tokenAddress",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "coverageAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "premium",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "duration",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "getClaim",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "insured",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "tokenAddress",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "timestamp",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "description",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "status",
-              type: "uint8",
-              internalType: "enum ClaimProcessor.ClaimStatus",
-            },
-            {
-              name: "verifier",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "rejectionReason",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getPolicy",
-          inputs: [
-            {
-              name: "insured",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "tokenAddress",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "coverageAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "premium",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "startTime",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "endTime",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "isActive",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getRoleAdmin",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getUserClaims",
-          inputs: [
-            {
-              name: "user",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256[]",
-              internalType: "uint256[]",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "grantRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "hasRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "policies",
-          inputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "insured",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "tokenAddress",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "coverageAmount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "premium",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "startTime",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "endTime",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "isActive",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "processClaimPayout",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "renounceRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "callerConfirmation",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "reviewClaim",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "approved",
-              type: "bool",
-              internalType: "bool",
-            },
-            {
-              name: "reason",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "revokeRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "submitClaim",
-          inputs: [
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "description",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "supportsInterface",
-          inputs: [
-            {
-              name: "interfaceId",
-              type: "bytes4",
-              internalType: "bytes4",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "userClaims",
-          inputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "event",
-          name: "ClaimPaid",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              indexed: true,
-              internalType: "uint256",
-            },
-            {
-              name: "insured",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "ClaimStatusUpdated",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              indexed: true,
-              internalType: "uint256",
-            },
-            {
-              name: "status",
-              type: "uint8",
-              indexed: false,
-              internalType: "enum ClaimProcessor.ClaimStatus",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "ClaimSubmitted",
-          inputs: [
-            {
-              name: "claimId",
-              type: "uint256",
-              indexed: true,
-              internalType: "uint256",
-            },
-            {
-              name: "insured",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "PolicyCreated",
-          inputs: [
-            {
-              name: "insured",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "coverageAmount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleAdminChanged",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "previousAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "newAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleGranted",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleRevoked",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "error",
-          name: "AccessControlBadConfirmation",
+          name: "InvalidAdminAddress",
           inputs: [],
         },
         {
           type: "error",
-          name: "AccessControlUnauthorizedAccount",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "neededRole",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
+          name: "InvalidCoverageAmount",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidCoverageLimit",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidDuration",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidPremiumRate",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidRiskScore",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidTokenAddress",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InvalidValue",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NoSuitableCoverageOption",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NotAuthorized",
+          inputs: [],
         },
         {
           type: "error",
           name: "ReentrancyGuardReentrantCall",
           inputs: [],
         },
-      ],
-      inheritedFunctions: {},
-      deploymentFile: "run-1745409774.json",
-      deploymentScript: "Deploy.s.sol",
-    },
-    DataVerification: {
-      address: "0x8f3024d12c3d702930f2ff98aa8e2261f0be490a",
-      abi: [
-        {
-          type: "constructor",
-          inputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "DEFAULT_ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "VERIFIER_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "addTemplateVerifier",
-          inputs: [
-            {
-              name: "assetType",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "verifier",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "addVerifier",
-          inputs: [
-            {
-              name: "verifier",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "createObligation",
-          inputs: [
-            {
-              name: "obligatedParty",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "deadline",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "description",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "createVerificationTemplate",
-          inputs: [
-            {
-              name: "assetType",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "requiredFields",
-              type: "string[]",
-              internalType: "string[]",
-            },
-            {
-              name: "optionalFields",
-              type: "string[]",
-              internalType: "string[]",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "fulfillObligation",
-          inputs: [
-            {
-              name: "obligationId",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "getObligation",
-          inputs: [
-            {
-              name: "obligationId",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "tuple",
-              internalType: "struct DataVerification.Obligation",
-              components: [
-                {
-                  name: "obligatedParty",
-                  type: "address",
-                  internalType: "address",
-                },
-                {
-                  name: "deadline",
-                  type: "uint256",
-                  internalType: "uint256",
-                },
-                {
-                  name: "description",
-                  type: "string",
-                  internalType: "string",
-                },
-                {
-                  name: "fulfilled",
-                  type: "bool",
-                  internalType: "bool",
-                },
-              ],
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getRoleAdmin",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getVerificationData",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "tuple",
-              internalType: "struct DataVerification.VerificationData",
-              components: [
-                {
-                  name: "verifier",
-                  type: "address",
-                  internalType: "address",
-                },
-                {
-                  name: "timestamp",
-                  type: "uint256",
-                  internalType: "uint256",
-                },
-                {
-                  name: "isValid",
-                  type: "bool",
-                  internalType: "bool",
-                },
-                {
-                  name: "dataHash",
-                  type: "string",
-                  internalType: "string",
-                },
-                {
-                  name: "metadata",
-                  type: "string",
-                  internalType: "string",
-                },
-              ],
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getVerificationTemplate",
-          inputs: [
-            {
-              name: "assetType",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "tuple",
-              internalType: "struct DataVerification.VerificationTemplate",
-              components: [
-                {
-                  name: "requiredFields",
-                  type: "string[]",
-                  internalType: "string[]",
-                },
-                {
-                  name: "optionalFields",
-                  type: "string[]",
-                  internalType: "string[]",
-                },
-                {
-                  name: "authorizedVerifiers",
-                  type: "address[]",
-                  internalType: "address[]",
-                },
-              ],
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "grantRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "hasRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "isAssetVerified",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "removeVerifier",
-          inputs: [
-            {
-              name: "verifier",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "renounceRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "callerConfirmation",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "revokeRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "setStateConnector",
-          inputs: [
-            {
-              name: "_stateConnectorAddress",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "stateConnectorAddress",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "stateConnectorEnabled",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "supportsInterface",
-          inputs: [
-            {
-              name: "interfaceId",
-              type: "bytes4",
-              internalType: "bytes4",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "verifyAsset",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "isValid",
-              type: "bool",
-              internalType: "bool",
-            },
-            {
-              name: "dataHash",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "metadata",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "verifyWithStateConnector",
-          inputs: [
-            {
-              name: "requestId",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "proof",
-              type: "bytes",
-              internalType: "bytes",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "event",
-          name: "ObligationCreated",
-          inputs: [
-            {
-              name: "obligationId",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "obligatedParty",
-              type: "address",
-              indexed: false,
-              internalType: "address",
-            },
-            {
-              name: "deadline",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "ObligationFulfilled",
-          inputs: [
-            {
-              name: "obligationId",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleAdminChanged",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "previousAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "newAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleGranted",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleRevoked",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "StateConnectorSet",
-          inputs: [
-            {
-              name: "stateConnectorAddress",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "TemplateCreated",
-          inputs: [
-            {
-              name: "assetType",
-              type: "string",
-              indexed: true,
-              internalType: "string",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "VerificationAdded",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "verifier",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "isValid",
-              type: "bool",
-              indexed: false,
-              internalType: "bool",
-            },
-            {
-              name: "dataHash",
-              type: "string",
-              indexed: false,
-              internalType: "string",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "VerificationUpdated",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "verifier",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "isValid",
-              type: "bool",
-              indexed: false,
-              internalType: "bool",
-            },
-            {
-              name: "dataHash",
-              type: "string",
-              indexed: false,
-              internalType: "string",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "VerifierAdded",
-          inputs: [
-            {
-              name: "verifier",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "VerifierRemoved",
-          inputs: [
-            {
-              name: "verifier",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
         {
           type: "error",
-          name: "AccessControlBadConfirmation",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "AccessControlUnauthorizedAccount",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "neededRole",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "ReentrancyGuardReentrantCall",
+          name: "TokenNotEvaluated",
           inputs: [],
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1745512506.json",
-      deploymentScript: "Deploy.s.sol",
-    },
-    TokenRWAFactory: {
-      address: "0x67f65b834aaac92c15c2eba9ff7e81f2d33a1cfd",
-      abi: [
-        {
-          type: "constructor",
-          inputs: [
-            {
-              name: "_verificationContract",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "DEFAULT_ADMIN_ROLE",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "createToken",
-          inputs: [
-            {
-              name: "name",
-              type: "string",
-              internalType: "string",
-            },
-            {
-              name: "symbol",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "deployImplementation",
-          inputs: [],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "getRoleAdmin",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "grantRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "hasRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "implementation",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "contract TokenRWA",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "renounceRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "callerConfirmation",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "revokeRole",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "supportsInterface",
-          inputs: [
-            {
-              name: "interfaceId",
-              type: "bytes4",
-              internalType: "bytes4",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "updateVerificationContract",
-          inputs: [
-            {
-              name: "_verificationContract",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "verificationContract",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "event",
-          name: "RoleAdminChanged",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "previousAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "newAdminRole",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleGranted",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "RoleRevoked",
-          inputs: [
-            {
-              name: "role",
-              type: "bytes32",
-              indexed: true,
-              internalType: "bytes32",
-            },
-            {
-              name: "account",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "sender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "TokenCreated",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "name",
-              type: "string",
-              indexed: false,
-              internalType: "string",
-            },
-            {
-              name: "symbol",
-              type: "string",
-              indexed: false,
-              internalType: "string",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "error",
-          name: "AccessControlBadConfirmation",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "AccessControlUnauthorizedAccount",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "neededRole",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "FailedDeployment",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "InsufficientBalance",
-          inputs: [
-            {
-              name: "balance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "needed",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-        },
-      ],
-      inheritedFunctions: {},
-      deploymentFile: "run-1745512506.json",
-      deploymentScript: "Deploy.s.sol",
+      deploymentFile: "run-1745572106.json",
+      deploymentScript: "DeployInsuranceCore.s.sol",
     },
   },
 } as const;

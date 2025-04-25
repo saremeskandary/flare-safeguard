@@ -10,6 +10,7 @@ import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaff
 import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
+import { ADMIN_ROLE } from "~~/utils/contractConstants";
 
 type HeaderMenuLink = {
   label: string;
@@ -66,10 +67,16 @@ export const Header = () => {
   const isLocalNetwork = targetNetwork.id === hardhat.id;
   const { address } = useAccount();
 
-  const { data: isAdmin } = useScaffoldReadContract({
+  const { data: isAdminInsuranceCore } = useScaffoldReadContract({
     contractName: "InsuranceCore",
     functionName: "hasRole",
-    args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address],
+    args: [ADMIN_ROLE, address],
+  });
+
+  const { data: isAdminTokenRWAFactoryRole } = useScaffoldReadContract({
+    contractName: "TokenRWAFactory",
+    functionName: "hasRole",
+    args: [ADMIN_ROLE, address],
   });
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -119,8 +126,11 @@ export const Header = () => {
       <div className="navbar-end flex-grow mr-4">
         <div className="flex items-center gap-2">
           <RainbowKitCustomConnectButton />
-          {isAdmin && (
-            <div className="badge badge-primary">Admin</div>
+          {isAdminInsuranceCore && (
+            <div className="badge badge-primary">Admin In</div>
+          )}
+          {isAdminTokenRWAFactoryRole && (
+            <div className="badge badge-primary">Admin RWA</div>
           )}
           {isLocalNetwork && <FaucetButton />}
         </div>
