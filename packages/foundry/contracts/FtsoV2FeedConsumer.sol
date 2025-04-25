@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import {console2} from "forge-std/Test.sol";
 import {FtsoV2Interface} from "flare-periphery/src/coston2/FtsoV2Interface.sol";
@@ -26,6 +26,12 @@ import "./interfaces/IFtsoV2FeedConsumer.sol";
  * adapted for other Flare networks by updating the feed IDs and interfaces.
  */
 contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
+    // Custom errors
+    error InvalidSymbol();
+    error SymbolAlreadyMonitored();
+    error SymbolNotMonitored();
+    error InvalidTimestamp();
+
     bytes32 public constant PRICE_UPDATER_ROLE =
         keccak256("PRICE_UPDATER_ROLE");
     bytes32 public constant FEED_MANAGER_ROLE = keccak256("FEED_MANAGER_ROLE");
@@ -117,8 +123,8 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         string calldata symbol,
         uint8 decimals
     ) external override onlyRole(FEED_MANAGER_ROLE) returns (bool success) {
-        require(bytes(symbol).length > 0, "Invalid symbol");
-        require(!_isMonitored[symbol], "Symbol already monitored");
+        if (bytes(symbol).length == 0) revert InvalidSymbol();
+        if (_isMonitored[symbol]) revert SymbolAlreadyMonitored();
 
         _priceFeeds[symbol] = PriceFeed({
             symbol: symbol,
@@ -144,7 +150,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
     function removePriceFeed(
         string calldata symbol
     ) external override onlyRole(FEED_MANAGER_ROLE) returns (bool success) {
-        require(_isMonitored[symbol], "Symbol not monitored");
+        if (!_isMonitored[symbol]) revert SymbolNotMonitored();
 
         // Find the index of the symbol in the array
         uint256 index = 0;
@@ -185,8 +191,8 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         uint256 price,
         uint256 timestamp
     ) external override onlyRole(PRICE_UPDATER_ROLE) returns (bool success) {
-        require(_isMonitored[symbol], "Symbol not monitored");
-        require(timestamp <= block.timestamp, "Invalid timestamp");
+        if (!_isMonitored[symbol]) revert SymbolNotMonitored();
+        if (timestamp > block.timestamp) revert InvalidTimestamp();
 
         PriceFeed storage feed = _priceFeeds[symbol];
         feed.price = price;
@@ -213,7 +219,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         override
         returns (uint256 price, uint256 timestamp, bool valid)
     {
-        require(_isMonitored[symbol], "Symbol not monitored");
+        if (!_isMonitored[symbol]) revert SymbolNotMonitored();
 
         PriceFeed memory feed = _priceFeeds[symbol];
         return (feed.price, feed.timestamp, feed.valid);
@@ -227,7 +233,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
     function getPriceFeed(
         string calldata symbol
     ) external view override returns (PriceFeed memory feed) {
-        require(_isMonitored[symbol], "Symbol not monitored");
+        if (!_isMonitored[symbol]) revert SymbolNotMonitored();
 
         return _priceFeeds[symbol];
     }
@@ -255,7 +261,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         string calldata symbol,
         uint256 maxAge
     ) external view override returns (bool valid) {
-        require(_isMonitored[symbol], "Symbol not monitored");
+        if (!_isMonitored[symbol]) revert SymbolNotMonitored();
 
         PriceFeed memory feed = _priceFeeds[symbol];
 

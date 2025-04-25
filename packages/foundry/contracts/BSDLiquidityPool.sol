@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -24,6 +24,17 @@ import "./BSDToken.sol";
  * reward mechanisms.
  */
 contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
+    // Custom errors
+    error InvalidBSDTokenAddress();
+    error InvalidUSDTTokenAddress();
+    error AmountsMustBeGreaterThanZero();
+    error BSDTransferFailed();
+    error USDTTransferFailed();
+    error SharesMustBeGreaterThanZero();
+    error InsufficientShares();
+    error AmountMustBeGreaterThanZero();
+    error InsufficientOutputAmount();
+
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     BSDToken public immutable bsdToken;
@@ -64,8 +75,8 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
     event RewardsDistributed(uint256 totalRewards);
 
     constructor(address _bsdToken, address _usdtToken) {
-        require(_bsdToken != address(0), "Invalid BSD token address");
-        require(_usdtToken != address(0), "Invalid USDT token address");
+        if (_bsdToken == address(0)) revert InvalidBSDTokenAddress();
+        if (_usdtToken == address(0)) revert InvalidUSDTTokenAddress();
 
         bsdToken = BSDToken(_bsdToken);
         usdtToken = IERC20(_usdtToken);
@@ -83,20 +94,14 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
         uint256 bsdAmount,
         uint256 usdtAmount
     ) external nonReentrant whenNotPaused {
-        require(
-            bsdAmount > 0 && usdtAmount > 0,
-            "Amounts must be greater than 0"
-        );
+        if (bsdAmount == 0 || usdtAmount == 0)
+            revert AmountsMustBeGreaterThanZero();
 
         // Transfer tokens from user
-        require(
-            bsdToken.transferFrom(msg.sender, address(this), bsdAmount),
-            "BSD transfer failed"
-        );
-        require(
-            usdtToken.transferFrom(msg.sender, address(this), usdtAmount),
-            "USDT transfer failed"
-        );
+        if (!bsdToken.transferFrom(msg.sender, address(this), bsdAmount))
+            revert BSDTransferFailed();
+        if (!usdtToken.transferFrom(msg.sender, address(this), usdtAmount))
+            revert USDTTransferFailed();
 
         // Calculate shares
         uint256 shares;
@@ -122,8 +127,8 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
     function removeLiquidity(
         uint256 shares
     ) external nonReentrant whenNotPaused {
-        require(shares > 0, "Shares must be greater than 0");
-        require(shares <= providerShares[msg.sender], "Insufficient shares");
+        if (shares == 0) revert SharesMustBeGreaterThanZero();
+        if (shares > providerShares[msg.sender]) revert InsufficientShares();
 
         // Calculate amounts to return
         uint256 bsdAmount = (shares * totalBSD) / totalShares;
@@ -136,14 +141,10 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
         providerShares[msg.sender] -= shares;
 
         // Transfer tokens to user
-        require(
-            bsdToken.transfer(msg.sender, bsdAmount),
-            "BSD transfer failed"
-        );
-        require(
-            usdtToken.transfer(msg.sender, usdtAmount),
-            "USDT transfer failed"
-        );
+        if (!bsdToken.transfer(msg.sender, bsdAmount))
+            revert BSDTransferFailed();
+        if (!usdtToken.transfer(msg.sender, usdtAmount))
+            revert USDTTransferFailed();
 
         emit LiquidityRemoved(msg.sender, bsdAmount, usdtAmount);
     }
@@ -157,24 +158,20 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
         uint256 bsdIn,
         uint256 minUsdtOut
     ) external nonReentrant whenNotPaused {
-        require(bsdIn > 0, "Amount must be greater than 0");
+        if (bsdIn == 0) revert AmountMustBeGreaterThanZero();
 
         // Calculate amounts with fee
         uint256 fee = (bsdIn * SWAP_FEE_BPS) / FEE_DENOMINATOR;
         uint256 bsdInAfterFee = bsdIn - fee;
 
         uint256 usdtOut = (bsdInAfterFee * totalUSDT) / totalBSD;
-        require(usdtOut >= minUsdtOut, "Insufficient output amount");
+        if (usdtOut < minUsdtOut) revert InsufficientOutputAmount();
 
         // Transfer tokens
-        require(
-            bsdToken.transferFrom(msg.sender, address(this), bsdIn),
-            "BSD transfer failed"
-        );
-        require(
-            usdtToken.transfer(msg.sender, usdtOut),
-            "USDT transfer failed"
-        );
+        if (!bsdToken.transferFrom(msg.sender, address(this), bsdIn))
+            revert BSDTransferFailed();
+        if (!usdtToken.transfer(msg.sender, usdtOut))
+            revert USDTTransferFailed();
 
         // Update pool state
         totalBSD += bsdIn;
@@ -192,21 +189,19 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
         uint256 usdtIn,
         uint256 minBsdOut
     ) external nonReentrant whenNotPaused {
-        require(usdtIn > 0, "Amount must be greater than 0");
+        if (usdtIn == 0) revert AmountMustBeGreaterThanZero();
 
         // Calculate amounts with fee
         uint256 fee = (usdtIn * SWAP_FEE_BPS) / FEE_DENOMINATOR;
         uint256 usdtInAfterFee = usdtIn - fee;
 
         uint256 bsdOut = (usdtInAfterFee * totalBSD) / totalUSDT;
-        require(bsdOut >= minBsdOut, "Insufficient output amount");
+        if (bsdOut < minBsdOut) revert InsufficientOutputAmount();
 
         // Transfer tokens
-        require(
-            usdtToken.transferFrom(msg.sender, address(this), usdtIn),
-            "USDT transfer failed"
-        );
-        require(bsdToken.transfer(msg.sender, bsdOut), "BSD transfer failed");
+        if (!usdtToken.transferFrom(msg.sender, address(this), usdtIn))
+            revert USDTTransferFailed();
+        if (!bsdToken.transfer(msg.sender, bsdOut)) revert BSDTransferFailed();
 
         // Update pool state
         totalUSDT += usdtIn;

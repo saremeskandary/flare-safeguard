@@ -4,6 +4,9 @@ pragma solidity ^0.8.25;
 import {RandomNumberV2Interface} from "flare-periphery/src/coston2/RandomNumberV2Interface.sol";
 
 contract MockRandomNumberV2 is RandomNumberV2Interface {
+    // Custom errors
+    error InvalidVotingRoundId();
+
     uint256 private _randomNumber;
     bool private _isSecureRandom;
     uint256 private _randomTimestamp;
@@ -31,8 +34,7 @@ contract MockRandomNumberV2 is RandomNumberV2Interface {
             uint256 randomTimestamp
         )
     {
-        // Warning suppression
-        require(votingRoundId != uint256(0));
+        if (votingRoundId == 0) revert InvalidVotingRoundId();
         return (_randomNumber, _isSecureRandom, _randomTimestamp);
     }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -20,6 +20,10 @@ import "./BSDToken.sol";
  * functionality without advanced features like fee distribution or liquidity mining.
  */
 contract LiquidityPool is Ownable {
+    // Custom errors
+    error AmountMustBeGreaterThanZero();
+    error InsufficientBalance();
+
     using SafeERC20 for IERC20;
     using SafeERC20 for BSDToken;
 
@@ -59,10 +63,8 @@ contract LiquidityPool is Ownable {
      * @param usdtAmount Amount of USDT tokens to add
      */
     function addLiquidity(uint256 bsdAmount, uint256 usdtAmount) external {
-        require(
-            bsdAmount > 0 && usdtAmount > 0,
-            "Amount must be greater than 0"
-        );
+        if (bsdAmount == 0 || usdtAmount == 0)
+            revert AmountMustBeGreaterThanZero();
 
         bsdToken.safeTransferFrom(msg.sender, address(this), bsdAmount);
         usdtToken.safeTransferFrom(msg.sender, address(this), usdtAmount);
@@ -78,8 +80,8 @@ contract LiquidityPool is Ownable {
      * @param amount Amount of BSD tokens to remove
      */
     function removeLiquidity(uint256 amount) external {
-        require(amount > 0, "Amount must be greater than 0");
-        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
+        if (amount == 0) revert AmountMustBeGreaterThanZero();
+        if (balanceOf[msg.sender] < amount) revert InsufficientBalance();
 
         balanceOf[msg.sender] -= amount;
         totalLiquidity -= amount;
@@ -93,7 +95,7 @@ contract LiquidityPool is Ownable {
      * @param bsdAmount Amount of BSD tokens to swap
      */
     function swapBSDForUSDT(uint256 bsdAmount) external {
-        require(bsdAmount > 0, "Amount must be greater than 0");
+        if (bsdAmount == 0) revert AmountMustBeGreaterThanZero();
 
         uint256 fee = (bsdAmount * FEE_BPS) / 10000;
         uint256 amountAfterFee = bsdAmount - fee;

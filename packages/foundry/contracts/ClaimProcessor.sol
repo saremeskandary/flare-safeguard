@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -26,6 +26,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * remains the primary token for the platform's operations.
  */
 contract ClaimProcessor is AccessControl, ReentrancyGuard {
+    // Custom errors
+    error InvalidBSDTokenAddress();
+    error InvalidTokenAddress();
+    error InvalidCoverageAmount();
+    error InvalidPremium();
+    error InvalidDuration();
+    error PremiumTransferFailed();
+    error NoActivePolicy();
+    error PolicyExpired();
+    error AmountExceedsCoverage();
+    error InvalidClaimStatus();
+    error ClaimNotApproved();
+    error ClaimAlreadyPaid();
+    error PolicyNotActive();
+    error TransferFailed();
+
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
@@ -83,7 +99,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     );
 
     constructor(address _bsdToken) {
-        require(_bsdToken != address(0), "Invalid BSD token address");
+        if (_bsdToken == address(0)) revert InvalidBSDTokenAddress();
         bsdToken = IERC20(_bsdToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -103,16 +119,14 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         uint256 premium,
         uint256 duration
     ) external nonReentrant {
-        require(tokenAddress != address(0), "Invalid token address");
-        require(coverageAmount > 0, "Invalid coverage amount");
-        require(premium > 0, "Invalid premium");
-        require(duration > 0, "Invalid duration");
+        if (tokenAddress == address(0)) revert InvalidTokenAddress();
+        if (coverageAmount == 0) revert InvalidCoverageAmount();
+        if (premium == 0) revert InvalidPremium();
+        if (duration == 0) revert InvalidDuration();
 
         // Transfer premium
-        require(
-            bsdToken.transferFrom(msg.sender, address(this), premium),
-            "Premium transfer failed"
-        );
+        if (!bsdToken.transferFrom(msg.sender, address(this), premium))
+            revert PremiumTransferFailed();
 
         policies[msg.sender] = InsurancePolicy({
             insured: msg.sender,
@@ -137,9 +151,9 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         string memory description
     ) external nonReentrant {
         InsurancePolicy memory policy = policies[msg.sender];
-        require(policy.isActive, "No active policy");
-        require(block.timestamp <= policy.endTime, "Policy expired");
-        require(amount <= policy.coverageAmount, "Amount exceeds coverage");
+        if (!policy.isActive) revert NoActivePolicy();
+        if (block.timestamp > policy.endTime) revert PolicyExpired();
+        if (amount > policy.coverageAmount) revert AmountExceedsCoverage();
 
         uint256 claimId = claimCount++;
         claims[claimId] = Claim({
@@ -169,11 +183,10 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         string memory reason
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
         Claim storage claim = claims[claimId];
-        require(
-            claim.status == ClaimStatus.Pending ||
-                claim.status == ClaimStatus.UnderReview,
-            "Invalid claim status"
-        );
+        if (
+            claim.status != ClaimStatus.Pending &&
+            claim.status != ClaimStatus.UnderReview
+        ) revert InvalidClaimStatus();
 
         claim.verifier = msg.sender;
         claim.status = approved ? ClaimStatus.Approved : ClaimStatus.Rejected;
@@ -190,18 +203,16 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
      */
     function processPayout(uint256 claimId) internal {
         Claim storage claim = claims[claimId];
-        require(claim.status == ClaimStatus.Approved, "Claim not approved");
-        require(claim.status != ClaimStatus.Paid, "Claim already paid");
+        if (claim.status != ClaimStatus.Approved) revert ClaimNotApproved();
+        if (claim.status == ClaimStatus.Paid) revert ClaimAlreadyPaid();
 
         InsurancePolicy memory policy = policies[claim.insured];
-        require(policy.isActive, "Policy not active");
-        require(block.timestamp <= policy.endTime, "Policy expired");
+        if (!policy.isActive) revert PolicyNotActive();
+        if (block.timestamp > policy.endTime) revert PolicyExpired();
 
         // Transfer the claim amount to the insured
-        require(
-            bsdToken.transfer(claim.insured, claim.amount),
-            "Transfer failed"
-        );
+        if (!bsdToken.transfer(claim.insured, claim.amount))
+            revert TransferFailed();
 
         claim.status = ClaimStatus.Paid;
         emit ClaimPaid(claimId, claim.insured, claim.amount);

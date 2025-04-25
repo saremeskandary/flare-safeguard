@@ -11,6 +11,17 @@ import "./DataVerification.sol";
  * @notice Real World Asset token with verification and transfer restrictions
  */
 contract TokenRWA is ERC20, Ownable, Pausable {
+    // Custom errors
+    error InvalidDataVerificationAddress();
+    error HolderAlreadyVerified();
+    error InvalidVerification();
+    error InvalidHolderAddress();
+    error TransfersDisabled();
+    error SenderNotVerified();
+    error TransferLimitExceeded();
+    error RecipientNotVerified();
+    error InvalidRecipientAddress();
+
     // State variables
     DataVerification public dataVerification;
     mapping(address => bool) public verifiedHolders;
@@ -29,10 +40,8 @@ contract TokenRWA is ERC20, Ownable, Pausable {
         string memory symbol,
         address _dataVerification
     ) ERC20(name, symbol) Ownable(msg.sender) {
-        require(
-            _dataVerification != address(0),
-            "Invalid data verification address"
-        );
+        if (_dataVerification == address(0))
+            revert InvalidDataVerificationAddress();
         dataVerification = DataVerification(payable(_dataVerification));
         transfersEnabled = false;
     }
@@ -46,10 +55,10 @@ contract TokenRWA is ERC20, Ownable, Pausable {
         bytes32 requestId,
         bytes calldata proof
     ) external whenNotPaused {
-        require(!verifiedHolders[msg.sender], "Holder already verified");
+        if (verifiedHolders[msg.sender]) revert HolderAlreadyVerified();
 
         bool isValid = dataVerification.verifyAttestation(requestId, proof);
-        require(isValid, "Invalid verification");
+        if (!isValid) revert InvalidVerification();
 
         verifiedHolders[msg.sender] = true;
         emit HolderVerified(msg.sender, balanceOf(msg.sender));
@@ -64,7 +73,7 @@ contract TokenRWA is ERC20, Ownable, Pausable {
         address holder,
         uint256 limit
     ) external onlyOwner {
-        require(holder != address(0), "Invalid holder address");
+        if (holder == address(0)) revert InvalidHolderAddress();
         transferLimits[holder] = limit;
         emit TransferLimitSet(holder, limit);
     }
@@ -91,7 +100,7 @@ contract TokenRWA is ERC20, Ownable, Pausable {
      * @param amount The amount to mint
      */
     function mint(address to, uint256 amount) external onlyOwner {
-        require(to != address(0), "Invalid recipient address");
+        if (to == address(0)) revert InvalidRecipientAddress();
         _mint(to, amount);
     }
 
@@ -103,20 +112,18 @@ contract TokenRWA is ERC20, Ownable, Pausable {
         address to,
         uint256 amount
     ) internal virtual override whenNotPaused {
-        require(transfersEnabled, "Transfers are disabled");
+        if (!transfersEnabled) revert TransfersDisabled();
 
         if (from != address(0)) {
             // Skip checks for minting
-            require(verifiedHolders[from], "Sender not verified");
-            require(
-                amount <= transferLimits[from] || transferLimits[from] == 0,
-                "Transfer limit exceeded"
-            );
+            if (!verifiedHolders[from]) revert SenderNotVerified();
+            if (transferLimits[from] != 0 && amount > transferLimits[from])
+                revert TransferLimitExceeded();
         }
 
         if (to != address(0)) {
             // Skip checks for burning
-            require(verifiedHolders[to], "Recipient not verified");
+            if (!verifiedHolders[to]) revert RecipientNotVerified();
         }
 
         super._update(from, to, amount);

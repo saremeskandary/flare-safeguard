@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./TokenRWA.sol";
+import "./RoleManager.sol";
 
 /**
  * @title TokenRWAFactory
@@ -14,15 +15,30 @@ contract TokenRWAFactory is AccessControl {
 
     TokenRWA public implementation;
     address public verificationContract;
+    RoleManager public roleManager;
 
-    event TokenCreated(address indexed token, string name, string symbol);
+    event TokenEvent(
+        address indexed token,
+        string name,
+        string symbol,
+        address indexed admin
+    );
+    event ManagerUpdated(
+        address indexed oldManager,
+        address indexed newManager
+    );
 
-    constructor(address _verificationContract) {
-        require(
-            _verificationContract != address(0),
-            "Invalid verification contract"
-        );
+    // Custom errors
+    error InvalidAddresses();
+    error ImplementationExists();
+    error InvalidParameters();
+
+    constructor(address _verificationContract, address _roleManager) {
+        if (_verificationContract == address(0) || _roleManager == address(0))
+            revert InvalidAddresses();
+
         verificationContract = _verificationContract;
+        roleManager = RoleManager(_roleManager);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -30,10 +46,9 @@ contract TokenRWAFactory is AccessControl {
      * @dev Deploy the implementation contract
      */
     function deployImplementation() external onlyRole(ADMIN_ROLE) {
-        require(
-            address(implementation) == address(0),
-            "Implementation already deployed"
-        );
+        if (address(implementation) != address(0))
+            revert ImplementationExists();
+
         implementation = new TokenRWA();
     }
 
@@ -47,20 +62,22 @@ contract TokenRWAFactory is AccessControl {
         string memory name,
         string memory symbol
     ) external onlyRole(ADMIN_ROLE) returns (address token) {
-        require(
-            address(implementation) != address(0),
-            "Implementation not deployed"
-        );
-        require(bytes(name).length > 0, "Name cannot be empty");
-        require(bytes(symbol).length > 0, "Symbol cannot be empty");
+        if (
+            address(implementation) == address(0) ||
+            bytes(name).length == 0 ||
+            bytes(symbol).length == 0
+        ) revert InvalidParameters();
 
-        // Clone the implementation contract
         token = Clones.clone(address(implementation));
-
-        // Initialize the clone
         TokenRWA(token).initialize(name, symbol, verificationContract);
+        roleManager.registerContract(
+            token,
+            string(abi.encodePacked(name, " Token"))
+        );
 
-        emit TokenCreated(token, name, symbol);
+        address factoryAdmin = msg.sender;
+        TokenRWA(token).setAdminFromParent(factoryAdmin, factoryAdmin);
+        emit TokenEvent(token, name, symbol, factoryAdmin);
         return token;
     }
 
@@ -71,10 +88,36 @@ contract TokenRWAFactory is AccessControl {
     function updateVerificationContract(
         address _verificationContract
     ) external onlyRole(ADMIN_ROLE) {
-        require(
-            _verificationContract != address(0),
-            "Invalid verification contract"
-        );
+        if (_verificationContract == address(0)) revert InvalidAddresses();
+
         verificationContract = _verificationContract;
+    }
+
+    /**
+     * @dev Update the role manager address
+     * @param _roleManager New role manager address
+     */
+    function updateRoleManager(
+        address _roleManager
+    ) external onlyRole(ADMIN_ROLE) {
+        if (_roleManager == address(0)) revert InvalidAddresses();
+
+        address oldManager = address(roleManager);
+        roleManager = RoleManager(_roleManager);
+        emit ManagerUpdated(oldManager, _roleManager);
+    }
+
+    /**
+     * @dev Synchronize admin roles across all tokens
+     * @param tokens Array of token addresses to synchronize
+     */
+    function synchronizeAdminRoles(
+        address[] calldata tokens
+    ) external onlyRole(ADMIN_ROLE) {
+        address factoryAdmin = msg.sender;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            TokenRWA(tokens[i]).setAdminFromParent(factoryAdmin, factoryAdmin);
+            emit TokenEvent(tokens[i], "", "", factoryAdmin);
+        }
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/ISafeguardMessageReceiver.sol";
@@ -22,6 +22,13 @@ import "./CrossChainClaimProcessor.sol";
  * - Supports the BSD Insurance Protocol's cross-chain capabilities
  */
 contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
+    // Custom errors
+    error InvalidClaimProcessorAddress();
+    error InvalidSenderAddress();
+    error InvalidChainId();
+    error MessageDoesNotExist();
+    error UnknownMessageType();
+
     bytes32 public constant MESSAGE_HANDLER_ROLE =
         keccak256("MESSAGE_HANDLER_ROLE");
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
@@ -52,10 +59,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      * @param _claimProcessor Address of the CrossChainClaimProcessor contract
      */
     constructor(address _claimProcessor) {
-        require(
-            _claimProcessor != address(0),
-            "Invalid claim processor address"
-        );
+        if (_claimProcessor == address(0))
+            revert InvalidClaimProcessorAddress();
         claimProcessor = CrossChainClaimProcessor(_claimProcessor);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -82,8 +87,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
         onlyRole(MESSAGE_HANDLER_ROLE)
         returns (uint256 messageId)
     {
-        require(sender != address(0), "Invalid sender address");
-        require(targetChain != 0, "Invalid chain ID");
+        if (sender == address(0)) revert InvalidSenderAddress();
+        if (targetChain == 0) revert InvalidChainId();
 
         messageId = _messageCount++;
 
@@ -114,10 +119,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
     function processMessage(
         uint256 messageId
     ) external override onlyRole(MESSAGE_HANDLER_ROLE) returns (bool success) {
-        require(
-            _messages[messageId].sender != address(0),
-            "Message does not exist"
-        );
+        if (_messages[messageId].sender == address(0))
+            revert MessageDoesNotExist();
 
         Message memory message = _messages[messageId];
 
@@ -130,7 +133,7 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
         } else if (message.messageType == MessageType.ClaimPayment) {
             success = _handleClaimPayment(message);
         } else {
-            revert("Unknown message type");
+            revert UnknownMessageType();
         }
 
         emit MessageProcessed(messageId, success);
@@ -146,10 +149,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
     function getMessage(
         uint256 messageId
     ) external view override returns (Message memory message) {
-        require(
-            _messages[messageId].sender != address(0),
-            "Message does not exist"
-        );
+        if (_messages[messageId].sender == address(0))
+            revert MessageDoesNotExist();
         return _messages[messageId];
     }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IFlareDataFetcher.sol";
@@ -8,6 +8,9 @@ import "./interfaces/IFlareDataFetcher.sol";
  * @title FlareDataRequest contract used for data fetching
  */
 abstract contract FlareDataRequest is Ownable {
+    // Custom errors
+    error InvalidDataFetcherAddress();
+
     IFlareDataFetcher public dataFetcher;
     address public dataFetcherAddress;
 
@@ -28,10 +31,8 @@ abstract contract FlareDataRequest is Ownable {
     event DataRequestFailed(bytes32 indexed requestId, string reason);
 
     constructor(address dataFetcherAddress_) Ownable(msg.sender) {
-        require(
-            dataFetcherAddress_ != address(0),
-            "FlareDataRequest: dataFetcherAddress_ cannot be zero"
-        );
+        if (dataFetcherAddress_ == address(0))
+            revert InvalidDataFetcherAddress();
         dataFetcherAddress = dataFetcherAddress_;
         dataFetcher = IFlareDataFetcher(dataFetcherAddress_);
     }
@@ -87,10 +88,8 @@ abstract contract FlareDataRequest is Ownable {
     /// @notice Update the data fetcher address
     /// @param _dataFetcherAddress The new data fetcher address
     function updateDataFetcher(address _dataFetcherAddress) external onlyOwner {
-        require(
-            _dataFetcherAddress != address(0),
-            "FlareDataRequest: _dataFetcherAddress cannot be zero"
-        );
+        if (_dataFetcherAddress == address(0))
+            revert InvalidDataFetcherAddress();
         dataFetcherAddress = _dataFetcherAddress;
         dataFetcher = IFlareDataFetcher(_dataFetcherAddress);
     }

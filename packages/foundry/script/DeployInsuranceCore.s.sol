@@ -1,24 +1,51 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "forge-std/Script.sol";
 import "../contracts/InsuranceCore.sol";
+import "../contracts/RoleManager.sol";
 
 /**
  * @notice Deployment script for the InsuranceCore contract
  */
 contract DeployInsuranceCore is Script {
     function run() external returns (address) {
+        return runWithBroadcast(true);
+    }
+
+    function runWithBroadcast(bool startBroadcast) public returns (address) {
+        if (startBroadcast) {
+            vm.startBroadcast();
+        }
+
+        console.log("Deploying RoleManager contract...");
+        RoleManager roleManager = new RoleManager();
+        console.log("RoleManager deployed at:", address(roleManager));
+
+        // Grant ADMIN_ROLE to the deployer in RoleManager
+        roleManager.grantRole(roleManager.ADMIN_ROLE(), msg.sender);
+        console.log("Granted ADMIN_ROLE to deployer in RoleManager");
+
         console.log("Deploying InsuranceCore contract...");
-        InsuranceCore insuranceCore = new InsuranceCore();
+        InsuranceCore insuranceCore = new InsuranceCore(address(roleManager));
         console.log("InsuranceCore deployed at:", address(insuranceCore));
 
-        // Grant roles to deployer
-        console.log("Granting roles to deployer...");
+        // Grant roles to deployer in InsuranceCore first
+        console.log("Granting roles to deployer in InsuranceCore...");
         insuranceCore.grantRole(insuranceCore.DEFAULT_ADMIN_ROLE(), msg.sender);
         insuranceCore.grantRole(insuranceCore.ADMIN_ROLE(), msg.sender);
         insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), msg.sender);
-        console.log("Roles granted successfully");
+        console.log("Roles granted successfully in InsuranceCore");
+
+        // Grant ADMIN_ROLE to InsuranceCore in RoleManager
+        console.log("Granting ADMIN_ROLE to InsuranceCore in RoleManager...");
+        roleManager.grantRole(roleManager.ADMIN_ROLE(), address(insuranceCore));
+        console.log("ADMIN_ROLE granted to InsuranceCore in RoleManager");
+
+        // Now register InsuranceCore with RoleManager
+        console.log("Registering InsuranceCore with RoleManager...");
+        roleManager.registerContract(address(insuranceCore), "Insurance Core");
+        console.log("Registered InsuranceCore with RoleManager");
 
         // Add initial coverage options
         console.log("Adding initial coverage options...");
@@ -51,6 +78,9 @@ contract DeployInsuranceCore is Script {
             console.log("Failed to add premium coverage option:", reason);
         }
 
+        if (startBroadcast) {
+            vm.stopBroadcast();
+        }
         return address(insuranceCore);
     }
 }

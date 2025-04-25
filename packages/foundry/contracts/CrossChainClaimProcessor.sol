@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import "./ClaimProcessor.sol";
 import "./interfaces/IFdcTransferEventListener.sol";
@@ -16,6 +16,18 @@ import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
  * - Handle payouts for valid cross-chain claims
  */
 contract CrossChainClaimProcessor is ClaimProcessor {
+    // Custom errors
+    error InvalidFdcListenerAddress();
+    error NoActivePolicy();
+    error PolicyExpired();
+    error AmountExceedsCoverage();
+    error ClaimDoesNotExist();
+    error InvalidClaimStatus();
+    error TransactionHashMismatch();
+    error InsufficientConfirmations();
+    error InvalidTransactionProof();
+    error NoMatchingTransfer();
+
     // FDC Transfer Event Listener contract
     IFdcTransferEventListener public fdcTransferEventListener;
 
@@ -46,10 +58,8 @@ contract CrossChainClaimProcessor is ClaimProcessor {
         address _bsdToken,
         address _fdcTransferEventListener
     ) ClaimProcessor(_bsdToken) {
-        require(
-            _fdcTransferEventListener != address(0),
-            "Invalid FDC listener address"
-        );
+        if (_fdcTransferEventListener == address(0))
+            revert InvalidFdcListenerAddress();
         fdcTransferEventListener = IFdcTransferEventListener(
             _fdcTransferEventListener
         );
@@ -64,9 +74,9 @@ contract CrossChainClaimProcessor is ClaimProcessor {
         uint256 _amount
     ) internal returns (uint256) {
         InsurancePolicy memory policy = policies[msg.sender];
-        require(policy.isActive, "No active policy");
-        require(block.timestamp <= policy.endTime, "Policy expired");
-        require(_amount <= policy.coverageAmount, "Amount exceeds coverage");
+        if (!policy.isActive) revert NoActivePolicy();
+        if (block.timestamp > policy.endTime) revert PolicyExpired();
+        if (_amount > policy.coverageAmount) revert AmountExceedsCoverage();
 
         uint256 claimId = claimCount++;
         claims[claimId] = Claim({
@@ -128,11 +138,9 @@ contract CrossChainClaimProcessor is ClaimProcessor {
         uint256 _claimId,
         IEVMTransaction.Proof calldata _proof
     ) external onlyRole(VERIFIER_ROLE) {
-        require(_claimExists(_claimId), "Claim does not exist");
-        require(
-            claims[_claimId].status == ClaimStatus.Pending,
-            "Invalid claim status"
-        );
+        if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
+        if (claims[_claimId].status != ClaimStatus.Pending)
+            revert InvalidClaimStatus();
 
         // Decode the stored metadata
         (
@@ -145,23 +153,18 @@ contract CrossChainClaimProcessor is ClaimProcessor {
             );
 
         // Verify that the proof matches the stored transaction hash
-        require(
-            _proof.data.requestBody.transactionHash == transactionHash,
-            "Transaction hash mismatch"
-        );
+        if (_proof.data.requestBody.transactionHash != transactionHash)
+            revert TransactionHashMismatch();
 
         // Verify required confirmations
-        require(
-            _proof.data.requestBody.requiredConfirmations >=
-                requiredConfirmations,
-            "Insufficient confirmations"
-        );
+        if (
+            _proof.data.requestBody.requiredConfirmations <
+            requiredConfirmations
+        ) revert InsufficientConfirmations();
 
         // Verify the transaction proof using FDC
-        require(
-            fdcTransferEventListener.isEVMTransactionProofValid(_proof),
-            "Invalid transaction proof"
-        );
+        if (!fdcTransferEventListener.isEVMTransactionProofValid(_proof))
+            revert InvalidTransactionProof();
 
         // Process the transfer events
         fdcTransferEventListener.collectTransferEvents(_proof);
@@ -183,7 +186,7 @@ contract CrossChainClaimProcessor is ClaimProcessor {
             }
         }
 
-        require(transferFound, "No matching transfer found");
+        if (!transferFound) revert NoMatchingTransfer();
 
         // Mark the claim as verified
         claims[_claimId].status = ClaimStatus.Approved;
@@ -198,11 +201,9 @@ contract CrossChainClaimProcessor is ClaimProcessor {
     function processCrossChainClaim(
         uint256 _claimId
     ) external onlyRole(ADMIN_ROLE) nonReentrant {
-        require(_claimExists(_claimId), "Claim does not exist");
-        require(
-            claims[_claimId].status == ClaimStatus.Approved,
-            "Claim not verified"
-        );
+        if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
+        if (claims[_claimId].status != ClaimStatus.Approved)
+            revert InvalidClaimStatus();
 
         // Process the claim using the base contract's protected function
         processPayout(_claimId);

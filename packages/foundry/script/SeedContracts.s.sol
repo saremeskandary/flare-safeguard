@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "./DeployHelpers.s.sol";
 import "../contracts/ClaimProcessor.sol";
 import "../contracts/InsuranceCore.sol";
+import "../contracts/RoleManager.sol";
 import "../test/mocks/MockBSDToken.sol";
 
 /**
@@ -30,8 +31,12 @@ contract SeedContracts is ScaffoldETHDeploy {
         mockToken.mint(USER_ADDRESS, 1000000 ether);
         console.log("Minted tokens to deployer and user");
 
+        // Deploy RoleManager
+        RoleManager roleManager = new RoleManager();
+        console.log("RoleManager deployed at:", address(roleManager));
+
         // Deploy InsuranceCore
-        InsuranceCore insuranceCore = new InsuranceCore();
+        InsuranceCore insuranceCore = new InsuranceCore(address(roleManager));
         console.log("InsuranceCore deployed at:", address(insuranceCore));
 
         // Add coverage options

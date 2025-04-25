@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -9,6 +9,26 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @dev Contract for verifying real-world asset data with Flare State Connector integration
  */
 contract DataVerification is AccessControl, ReentrancyGuard {
+    // Custom errors
+    error InvalidAssetAddress();
+    error InvalidAssetType();
+    error InvalidVerifierAddress();
+    error TemplateNotFound();
+    error VerifierAlreadyAuthorized();
+    error InvalidObligatedParty();
+    error InvalidDeadline();
+    error EmptyDescription();
+    error ObligationNotFound();
+    error ObligationAlreadyFulfilled();
+    error NotAuthorizedToFulfill();
+    error InvalidStateConnectorAddress();
+    error StateConnectorNotEnabled();
+    error StateConnectorNotSet();
+    error InvalidRequestId();
+    error InvalidProof();
+    error InvalidRequestIdZero();
+    error EmptyProof();
+
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
@@ -101,7 +121,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         string calldata dataHash,
         string calldata metadata
     ) external onlyRole(VERIFIER_ROLE) nonReentrant {
-        require(asset != address(0), "Invalid asset address");
+        if (asset == address(0)) revert InvalidAssetAddress();
 
         VerificationData storage data = verifications[asset];
         bool isUpdate = data.verifier != address(0);
@@ -132,7 +152,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         string[] memory requiredFields,
         string[] memory optionalFields
     ) external onlyRole(ADMIN_ROLE) {
-        require(bytes(assetType).length > 0, "Invalid asset type");
+        if (bytes(assetType).length == 0) revert InvalidAssetType();
 
         verificationTemplates[assetType] = VerificationTemplate({
             requiredFields: requiredFields,
@@ -152,20 +172,18 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         string memory assetType,
         address verifier
     ) external onlyRole(ADMIN_ROLE) {
-        require(bytes(assetType).length > 0, "Invalid asset type");
-        require(verifier != address(0), "Invalid verifier address");
+        if (bytes(assetType).length == 0) revert InvalidAssetType();
+        if (verifier == address(0)) revert InvalidVerifierAddress();
 
         VerificationTemplate storage template = verificationTemplates[
             assetType
         ];
-        require(template.requiredFields.length > 0, "Template not found");
+        if (template.requiredFields.length == 0) revert TemplateNotFound();
 
         // Check if verifier already exists
         for (uint i = 0; i < template.authorizedVerifiers.length; i++) {
-            require(
-                template.authorizedVerifiers[i] != verifier,
-                "Verifier already authorized"
-            );
+            if (template.authorizedVerifiers[i] == verifier)
+                revert VerifierAlreadyAuthorized();
         }
 
         template.authorizedVerifiers.push(verifier);
@@ -183,9 +201,9 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         uint256 deadline,
         string memory description
     ) external onlyRole(ADMIN_ROLE) returns (bytes32) {
-        require(obligatedParty != address(0), "Invalid obligated party");
-        require(deadline > block.timestamp, "Deadline must be in the future");
-        require(bytes(description).length > 0, "Description cannot be empty");
+        if (obligatedParty == address(0)) revert InvalidObligatedParty();
+        if (deadline <= block.timestamp) revert InvalidDeadline();
+        if (bytes(description).length == 0) revert EmptyDescription();
 
         bytes32 obligationId = keccak256(
             abi.encodePacked(
@@ -213,16 +231,13 @@ contract DataVerification is AccessControl, ReentrancyGuard {
      */
     function fulfillObligation(bytes32 obligationId) external {
         Obligation storage obligation = obligations[obligationId];
-        require(
-            obligation.obligatedParty != address(0),
-            "Obligation not found"
-        );
-        require(!obligation.fulfilled, "Obligation already fulfilled");
-        require(
-            msg.sender == obligation.obligatedParty ||
-                hasRole(ADMIN_ROLE, msg.sender),
-            "Not authorized to fulfill obligation"
-        );
+        if (obligation.obligatedParty == address(0))
+            revert ObligationNotFound();
+        if (obligation.fulfilled) revert ObligationAlreadyFulfilled();
+        if (
+            msg.sender != obligation.obligatedParty &&
+            !hasRole(ADMIN_ROLE, msg.sender)
+        ) revert NotAuthorizedToFulfill();
 
         obligation.fulfilled = true;
         emit ObligationFulfilled(obligationId);
@@ -235,10 +250,8 @@ contract DataVerification is AccessControl, ReentrancyGuard {
     function setStateConnector(
         address _stateConnectorAddress
     ) external onlyRole(ADMIN_ROLE) {
-        require(
-            _stateConnectorAddress != address(0),
-            "Invalid State Connector address"
-        );
+        if (_stateConnectorAddress == address(0))
+            revert InvalidStateConnectorAddress();
         stateConnectorAddress = _stateConnectorAddress;
         stateConnectorEnabled = true;
         emit StateConnectorSet(_stateConnectorAddress);
@@ -254,17 +267,14 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         bytes32 requestId,
         bytes memory proof
     ) external view onlyRole(VERIFIER_ROLE) returns (bool) {
-        require(stateConnectorEnabled, "State Connector not enabled");
-        require(stateConnectorAddress != address(0), "State Connector not set");
+        if (!stateConnectorEnabled) revert StateConnectorNotEnabled();
+        if (stateConnectorAddress == address(0)) revert StateConnectorNotSet();
+        if (requestId == bytes32(0)) revert InvalidRequestId();
+        if (proof.length == 0) revert InvalidProof();
 
-        // This is a simplified example - actual implementation would depend on
-        // Flare's State Connector interface
-        // In a real implementation, you would call the State Connector contract
-        // and verify the proof using the requestId and proof parameters
-
-        // For demonstration purposes, we'll use the parameters in a simple check
-        require(requestId != bytes32(0), "Invalid request ID");
-        require(proof.length > 0, "Invalid proof");
+        // For demonstration purposes, we'll use a simple check
+        if (requestId == bytes32(0)) revert InvalidRequestIdZero();
+        if (proof.length == 0) revert EmptyProof();
 
         // For now, we'll just return true as a placeholder
         return true;

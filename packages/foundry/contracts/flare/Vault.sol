@@ -15,6 +15,14 @@ import "./DataVerification.sol";
 contract Vault is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // Custom errors
+    error InvalidReserveTokenAddress();
+    error InvalidDataVerificationAddress();
+    error InvalidAmount();
+    error InsufficientReserves();
+    error BelowMinimumReserve();
+    error ClaimExceedsMaximumRatio();
+
     // State variables
     IERC20 public reserveToken;
     DataVerification public dataVerification;
@@ -33,11 +41,9 @@ contract Vault is Ownable, ReentrancyGuard {
         address _reserveToken,
         address payable _dataVerification
     ) Ownable(msg.sender) {
-        require(_reserveToken != address(0), "Invalid reserve token address");
-        require(
-            _dataVerification != address(0),
-            "Invalid data verification address"
-        );
+        if (_reserveToken == address(0)) revert InvalidReserveTokenAddress();
+        if (_dataVerification == address(0))
+            revert InvalidDataVerificationAddress();
 
         reserveToken = IERC20(_reserveToken);
         dataVerification = DataVerification(_dataVerification);
@@ -48,7 +54,7 @@ contract Vault is Ownable, ReentrancyGuard {
      * @param amount Amount of tokens to deposit
      */
     function depositReserves(uint256 amount) external nonReentrant {
-        require(amount > 0, "Amount must be greater than 0");
+        if (amount == 0) revert InvalidAmount();
 
         reserveToken.safeTransferFrom(msg.sender, address(this), amount);
         totalReserves += amount;
@@ -61,12 +67,10 @@ contract Vault is Ownable, ReentrancyGuard {
      * @param amount Amount of tokens to withdraw
      */
     function withdrawReserves(uint256 amount) external onlyOwner nonReentrant {
-        require(amount > 0, "Amount must be greater than 0");
-        require(amount <= totalReserves, "Insufficient reserves");
-        require(
-            totalReserves - amount >= MINIMUM_RESERVE,
-            "Cannot withdraw below minimum reserve"
-        );
+        if (amount == 0) revert InvalidAmount();
+        if (amount > totalReserves) revert InsufficientReserves();
+        if (totalReserves - amount < MINIMUM_RESERVE)
+            revert BelowMinimumReserve();
 
         totalReserves -= amount;
         reserveToken.safeTransfer(owner(), amount);
@@ -85,11 +89,9 @@ contract Vault is Ownable, ReentrancyGuard {
         bytes calldata proof,
         uint256 amount
     ) external nonReentrant {
-        require(amount > 0, "Amount must be greater than 0");
-        require(
-            amount <= (totalReserves * MAXIMUM_CLAIM_RATIO) / 100,
-            "Claim amount exceeds maximum ratio"
-        );
+        if (amount == 0) revert InvalidAmount();
+        if (amount > (totalReserves * MAXIMUM_CLAIM_RATIO) / 100)
+            revert ClaimExceedsMaximumRatio();
 
         // Verify the claim using FDC
         bool isValid = dataVerification.verifyAttestation(requestId, proof);

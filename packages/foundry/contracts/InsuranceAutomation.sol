@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./mock/MockTokenInsurance.sol";
@@ -25,6 +25,13 @@ import "./mock/MockTokenInsurance.sol";
  * represents a specific operation to be performed at a scheduled time.
  */
 contract InsuranceAutomation is Ownable {
+    // Custom errors
+    error InvalidInsuranceContractAddress();
+    error DueDateMustBeInFuture();
+    error TaskDoesNotExist();
+    error TaskAlreadyExecuted();
+    error TaskNotDueYet();
+
     struct AutomationTask {
         address insuranceContract;
         uint256 dueDate;
@@ -67,11 +74,9 @@ contract InsuranceAutomation is Ownable {
         address _insuranceContract,
         uint256 _dueDate
     ) external onlyOwner {
-        require(
-            _insuranceContract != address(0),
-            "Invalid insurance contract address"
-        );
-        require(_dueDate > block.timestamp, "Due date must be in the future");
+        if (_insuranceContract == address(0))
+            revert InvalidInsuranceContractAddress();
+        if (_dueDate <= block.timestamp) revert DueDateMustBeInFuture();
 
         bytes32 taskId = keccak256(
             abi.encodePacked(_insuranceContract, _dueDate, block.timestamp)
@@ -99,9 +104,9 @@ contract InsuranceAutomation is Ownable {
      */
     function executeTask(bytes32 _taskId) external {
         AutomationTask storage task = tasks[_taskId];
-        require(task.insuranceContract != address(0), "Task does not exist");
-        require(!task.executed, "Task already executed");
-        require(block.timestamp >= task.dueDate, "Task not due yet");
+        if (task.insuranceContract == address(0)) revert TaskDoesNotExist();
+        if (task.executed) revert TaskAlreadyExecuted();
+        if (block.timestamp < task.dueDate) revert TaskNotDueYet();
 
         task.executed = true;
         TokenInsurance(task.insuranceContract).callVaultHandleRWAPayment();
@@ -119,8 +124,8 @@ contract InsuranceAutomation is Ownable {
      */
     function removeTask(bytes32 _taskId) external onlyOwner {
         AutomationTask storage task = tasks[_taskId];
-        require(task.insuranceContract != address(0), "Task does not exist");
-        require(!task.executed, "Task already executed");
+        if (task.insuranceContract == address(0)) revert TaskDoesNotExist();
+        if (task.executed) revert TaskAlreadyExecuted();
 
         delete tasks[_taskId];
 

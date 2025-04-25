@@ -9,6 +9,9 @@ import "./FlareDataRequest.sol";
 import "./StateConnector.sol";
 
 contract TokenInsurance is ERC20, ERC20Burnable, FlareDataRequest {
+    // Custom errors
+    error InsurancePeriodEnded();
+
     using SafeERC20 for IERC20;
 
     uint256 public prime;
@@ -43,7 +46,7 @@ contract TokenInsurance is ERC20, ERC20Burnable, FlareDataRequest {
     }
 
     function payInsurance() external {
-        require(!dueDateArrived, "Insurance period has ended");
+        if (dueDateArrived) revert InsurancePeriodEnded();
         _mint(msg.sender, prime);
         emit InsurancePaid(msg.sender, prime);
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import {IEVMTransactionVerification} from "flare-periphery/src/coston2/IEVMTransactionVerification.sol";
 import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
@@ -25,6 +25,12 @@ import "./interfaces/IFdcTransferEventListener.sol";
  * to bridge information between different blockchain networks.
  */
 contract FdcTransferEventListener is IFdcTransferEventListener {
+    // Custom errors
+    error InvalidTokenAddress();
+    error InvalidChainId();
+    error TokenNotSupported();
+    error InvalidTransactionProof();
+
     // Mapping from token address to chain ID to track supported tokens
     mapping(address => mapping(uint256 => bool)) public supportedTokens;
 
@@ -60,8 +66,8 @@ contract FdcTransferEventListener is IFdcTransferEventListener {
      * @param chainId The ID of the chain where the token exists
      */
     function addSupportedToken(address tokenAddress, uint256 chainId) public {
-        require(tokenAddress != address(0), "Invalid token address");
-        require(chainId != 0, "Invalid chain ID");
+        if (tokenAddress == address(0)) revert InvalidTokenAddress();
+        if (chainId == 0) revert InvalidChainId();
 
         supportedTokens[tokenAddress][chainId] = true;
         emit TokenAdded(tokenAddress, chainId);
@@ -76,7 +82,7 @@ contract FdcTransferEventListener is IFdcTransferEventListener {
         address tokenAddress,
         uint256 chainId
     ) public {
-        require(supportedTokens[tokenAddress][chainId], "Token not supported");
+        if (!supportedTokens[tokenAddress][chainId]) revert TokenNotSupported();
 
         supportedTokens[tokenAddress][chainId] = false;
         emit TokenRemoved(tokenAddress, chainId);
@@ -135,10 +141,8 @@ contract FdcTransferEventListener is IFdcTransferEventListener {
     ) external override {
         // 1. FDC Logic
         // Check that this EVMTransaction has indeed been confirmed by the FDC
-        require(
-            isEVMTransactionProofValid(_transaction),
-            "Invalid transaction proof"
-        );
+        if (!isEVMTransactionProofValid(_transaction))
+            revert InvalidTransactionProof();
 
         // For demonstration purposes, we'll use a hardcoded chain ID
         // In a real implementation, this would be extracted from the transaction data

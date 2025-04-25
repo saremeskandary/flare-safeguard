@@ -1,14 +1,22 @@
 [profile.default]
 solc-version = "0.8.25"
 evm_version = "london"
-src = 'contracts'
-out = 'out'
-libs = ['lib']
+src = "contracts"
+out = "out"
+libs = ["lib"]
 fs_permissions = [{ access = "read-write", path = "./" }]
 via_ir = true
 optimizer = true
 optimizer_runs = 200
 
+[profile.release]
+via_ir = true
+optimizer = true
+optimizer_runs = 10000
+
+[profile.debug]
+via_ir = false
+optimizer = false
 
 [rpc_endpoints]
 default_network = "http://127.0.0.1:8545"
@@ -35,13 +43,11 @@ coston2 = "https://coston2.enosys.global/ext/C/rpc"
 songbird = { key = "X", chain = 16, url = "${SONGBIRD_RPC_URL}" }
 flare = { key = "X", chain = 16, url = "${FLARE_RPC_URL}" }
 
-
 localhost = "http://127.0.0.1:8545"
 
 [etherscan]
 polygonMumbai = { key = "${ETHERSCAN_API_KEY}" }
 sepolia = { key = "${ETHERSCAN_API_KEY}" }
-
 
 [fmt]
 line_length = 120
@@ -50,5 +56,16 @@ quote_style = "double"
 bracket_spacing = true
 int_types = "long"
 
+# Enable gas snapshots with: forge snapshot
+[gas_reports]
+# forge snapshot --match-contract MyContract
+# Will generate gas-snapshots/MyContract.md
 
-# See more config options https://book.getfoundry.sh/reference/config/overview
+# Optional: if you're using remappings.txt in your root directory
+# Example contents:
+# @openzeppelin=lib/openzeppelin-contracts
+# @solmate=lib/solmate
+
+# Environment loading (optional - works with `export $(cat .env | xargs)` in dev)
+[env]
+dotenv = ".env"

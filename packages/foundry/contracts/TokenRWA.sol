@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -12,6 +12,16 @@ import "./DataVerification.sol";
  * @dev Contract for managing Real World Asset (RWA) tokens using OpenZeppelin's ERC20 standard
  */
 contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
+    // Custom errors
+    error InvalidVerificationContract();
+    error NotAuthorized();
+    error InvalidAdminAddress();
+    error InvalidMintParameters();
+    error InvalidAddresses();
+    error InvalidParameters();
+    error InvalidAsset();
+    error NoObligation();
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
@@ -23,14 +33,12 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
     string private _tokenName;
     string private _tokenSymbol;
 
-    event AssetVerified(address indexed asset, bytes32 obligationId);
-    event AssetUnverified(address indexed asset);
-    event ObligationCreated(
+    event AssetStatusChanged(
+        address indexed asset,
         bytes32 indexed obligationId,
-        address obligatedParty,
-        uint256 deadline
+        bool verified
     );
-    event ObligationFulfilled(bytes32 indexed obligationId);
+    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() ERC20("", "") {
@@ -48,10 +56,8 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
         string memory tokenSymbol, // solhint-disable-next-line no-unused-vars
         address _verificationContract
     ) public initializer {
-        require(
-            _verificationContract != address(0),
-            "Invalid verification contract"
-        );
+        if (_verificationContract == address(0))
+            revert InvalidVerificationContract();
         verificationContract = DataVerification(_verificationContract);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -60,6 +66,34 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
         // Set token name and symbol
         _tokenName = tokenName;
         _tokenSymbol = tokenSymbol;
+    }
+
+    /**
+     * @dev Set admin role from a parent contract
+     * @param newAdmin Address of the new admin
+     * @param parentAdmin Address of the parent contract admin
+     */
+    function setAdminFromParent(
+        address newAdmin,
+        address parentAdmin
+    ) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, parentAdmin)) revert NotAuthorized();
+        if (newAdmin == address(0)) revert InvalidAdminAddress();
+
+        // Store the current admin for the event
+        address currentAdmin = msg.sender;
+
+        // Revoke admin role from the current admin if it's not the new admin
+        if (currentAdmin != newAdmin) {
+            _revokeRole(DEFAULT_ADMIN_ROLE, currentAdmin);
+        }
+
+        // Grant admin role to the new admin if they don't already have it
+        if (!hasRole(DEFAULT_ADMIN_ROLE, newAdmin)) {
+            _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+        }
+
+        emit AdminChanged(currentAdmin, newAdmin);
     }
 
     /**
@@ -85,9 +119,7 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
         address to,
         uint256 amount
     ) external onlyRole(MINTER_ROLE) nonReentrant {
-        require(to != address(0), "Invalid recipient address");
-        require(amount > 0, "Amount must be greater than 0");
-
+        if (to == address(0) || amount == 0) revert InvalidMintParameters();
         _mint(to, amount);
     }
 
@@ -104,23 +136,19 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
         uint256 deadline,
         string memory description
     ) external onlyRole(ADMIN_ROLE) {
-        require(asset != address(0), "Invalid asset address");
-        require(obligatedParty != address(0), "Invalid obligated party");
-        require(deadline > block.timestamp, "Deadline must be in the future");
-        require(bytes(description).length > 0, "Description cannot be empty");
+        if (asset == address(0) || obligatedParty == address(0))
+            revert InvalidAddresses();
+        if (deadline <= block.timestamp || bytes(description).length == 0)
+            revert InvalidParameters();
 
-        // Create obligation in verification contract
         bytes32 obligationId = verificationContract.createObligation(
             obligatedParty,
             deadline,
             description
         );
-
         verifiedAssets[asset] = true;
         assetObligations[asset] = obligationId;
-
-        emit AssetVerified(asset, obligationId);
-        emit ObligationCreated(obligationId, obligatedParty, deadline);
+        emit AssetStatusChanged(asset, obligationId, true);
     }
 
     /**
@@ -128,13 +156,12 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param asset Address of the asset to unverify
      */
     function unverifyAsset(address asset) external onlyRole(ADMIN_ROLE) {
-        require(asset != address(0), "Invalid asset address");
-        require(verifiedAssets[asset], "Asset not verified");
-
+        if (asset == address(0) || !verifiedAssets[asset])
+            revert InvalidAsset();
         verifiedAssets[asset] = false;
+        bytes32 obligationId = assetObligations[asset];
         delete assetObligations[asset];
-
-        emit AssetUnverified(asset);
+        emit AssetStatusChanged(asset, obligationId, false);
     }
 
     /**
@@ -142,14 +169,11 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param asset Address of the asset
      */
     function fulfillObligation(address asset) external {
-        require(asset != address(0), "Invalid asset address");
-        require(verifiedAssets[asset], "Asset not verified");
-
+        if (asset == address(0) || !verifiedAssets[asset])
+            revert InvalidAsset();
         bytes32 obligationId = assetObligations[asset];
-        require(obligationId != bytes32(0), "No obligation found");
-
+        if (obligationId == bytes32(0)) revert NoObligation();
         verificationContract.fulfillObligation(obligationId);
-        emit ObligationFulfilled(obligationId);
     }
 
     /**

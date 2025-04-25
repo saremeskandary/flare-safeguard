@@ -25,6 +25,18 @@ interface IFlareDataVerifier {
  * @notice Contract for verifying data using Flare Data Connector (FDC)
  */
 contract DataVerification is Ownable {
+    // Custom errors
+    error InvalidFdcHubAddress();
+    error InvalidVerificationAddress();
+    error InsufficientFee();
+    error FdcHubNotSet();
+    error VerificationAddressNotSet();
+    error DataVerifierNotSet();
+    error NoFeesToWithdraw();
+    error FeeWithdrawalFailed();
+    error InvalidRequestId();
+    error EmptyProof();
+
     IFlareDataFetcher public dataFetcher;
     IFlareDataVerifier public dataVerifier;
     address public fdcHub;
@@ -46,7 +58,7 @@ contract DataVerification is Ownable {
      * @param _hub The address of the FDC Hub contract
      */
     function setFdcHub(address _hub) external onlyOwner {
-        require(_hub != address(0), "Invalid FDC Hub address");
+        if (_hub == address(0)) revert InvalidFdcHubAddress();
         fdcHub = _hub;
         emit FdcHubSet(_hub);
     }
@@ -56,7 +68,7 @@ contract DataVerification is Ownable {
      * @param _verifier The address of the FDC Verification contract
      */
     function setVerificationAddress(address _verifier) external onlyOwner {
-        require(_verifier != address(0), "Invalid verification address");
+        if (_verifier == address(0)) revert InvalidVerificationAddress();
         verificationAddress = _verifier;
         dataVerifier = IFlareDataVerifier(_verifier);
         emit VerificationAddressSet(_verifier);
@@ -76,8 +88,8 @@ contract DataVerification is Ownable {
      * @param request The request data
      */
     function submitAttestationRequest(bytes calldata request) external payable {
-        require(msg.value >= fee, "Insufficient fee");
-        require(fdcHub != address(0), "FDC Hub not set");
+        if (msg.value < fee) revert InsufficientFee();
+        if (fdcHub == address(0)) revert FdcHubNotSet();
 
         accumulatedFees += msg.value;
 
@@ -99,14 +111,12 @@ contract DataVerification is Ownable {
         bytes32 requestId,
         bytes calldata proof
     ) external returns (bool) {
-        require(
-            verificationAddress != address(0),
-            "Verification address not set"
-        );
-        require(
-            dataVerifier != IFlareDataVerifier(address(0)),
-            "Data verifier not set"
-        );
+        if (verificationAddress == address(0))
+            revert VerificationAddressNotSet();
+        if (dataVerifier == IFlareDataVerifier(address(0)))
+            revert DataVerifierNotSet();
+        if (requestId == bytes32(0)) revert InvalidRequestId();
+        if (proof.length == 0) revert EmptyProof();
 
         IEVMTransaction.Proof memory decodedProof = abi.decode(
             proof,
@@ -124,11 +134,11 @@ contract DataVerification is Ownable {
      * @notice Withdraw accumulated fees
      */
     function withdrawFees() external onlyOwner {
-        require(accumulatedFees > 0, "No fees to withdraw");
+        if (accumulatedFees == 0) revert NoFeesToWithdraw();
         uint256 amount = accumulatedFees;
         accumulatedFees = 0;
         (bool success, ) = owner().call{value: amount}("");
-        require(success, "Fee withdrawal failed");
+        if (!success) revert FeeWithdrawalFailed();
         emit FeesWithdrawn(owner(), amount);
     }
 

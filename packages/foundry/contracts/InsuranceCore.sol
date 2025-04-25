@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./RoleManager.sol";
 
 /**
  * @title Insurance Core
@@ -30,6 +31,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * a complete insurance solution for RWA token holders.
  */
 contract InsuranceCore is AccessControl, ReentrancyGuard {
+    // Custom errors
+    error InvalidRoleManager();
+    error NotAuthorized();
+    error InvalidAdminAddress();
+    error InvalidCoverageLimit();
+    error InvalidPremiumRate();
+    error InvalidDuration();
+    error InvalidTokenAddress();
+    error InvalidValue();
+    error InvalidRiskScore();
+    error InvalidCoverageAmount();
+    error TokenNotEvaluated();
+    error NoSuitableCoverageOption();
+
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant EVALUATOR_ROLE = keccak256("EVALUATOR_ROLE");
 
@@ -53,6 +68,8 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     mapping(address => RWAEvaluation) public rwaEvaluations;
     uint256 public coverageOptionCount;
 
+    RoleManager public roleManager;
+
     event CoverageOptionAdded(
         uint256 indexed optionId,
         uint256 coverageLimit,
@@ -64,13 +81,66 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 amount,
         uint256 premium
     );
+    event AdminRoleTransferred(
+        address indexed previousAdmin,
+        address indexed newAdmin
+    );
+    event RoleManagerUpdated(
+        address indexed oldManager,
+        address indexed newManager
+    );
 
     /**
      * @dev Constructor initializes the contract and sets up initial roles
+     * @param _roleManager Address of the role manager contract
      */
-    constructor() {
+    constructor(address _roleManager) {
+        if (_roleManager == address(0)) revert InvalidRoleManager();
+        roleManager = RoleManager(_roleManager);
+
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
+    }
+
+    /**
+     * @dev Set admin role from a parent contract
+     * @param newAdmin Address of the new admin
+     * @param parentAdmin Address of the parent contract admin
+     */
+    function setAdminFromParent(
+        address newAdmin,
+        address parentAdmin
+    ) external {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, parentAdmin)) revert NotAuthorized();
+        if (newAdmin == address(0)) revert InvalidAdminAddress();
+
+        // Store the current admin for the event
+        address currentAdmin = msg.sender;
+
+        // Revoke admin role from the current admin if it's not the new admin
+        if (currentAdmin != newAdmin) {
+            _revokeRole(DEFAULT_ADMIN_ROLE, currentAdmin);
+        }
+
+        // Grant admin role to the new admin if they don't already have it
+        if (!hasRole(DEFAULT_ADMIN_ROLE, newAdmin)) {
+            _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+        }
+
+        emit AdminRoleTransferred(currentAdmin, newAdmin);
+    }
+
+    /**
+     * @dev Update the role manager address
+     * @param _roleManager New role manager address
+     */
+    function updateRoleManager(
+        address _roleManager
+    ) external onlyRole(ADMIN_ROLE) {
+        if (_roleManager == address(0)) revert InvalidRoleManager();
+        address oldManager = address(roleManager);
+        roleManager = RoleManager(_roleManager);
+        emit RoleManagerUpdated(oldManager, _roleManager);
     }
 
     /**
@@ -90,12 +160,10 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 minDuration,
         uint256 maxDuration
     ) external onlyRole(ADMIN_ROLE) {
-        require(coverageLimit > 0, "Invalid coverage limit");
-        require(premiumRate > 0, "Invalid premium rate");
-        require(
-            minDuration > 0 && maxDuration >= minDuration,
-            "Invalid duration"
-        );
+        if (coverageLimit == 0) revert InvalidCoverageLimit();
+        if (premiumRate == 0) revert InvalidPremiumRate();
+        if (minDuration == 0 || maxDuration < minDuration)
+            revert InvalidDuration();
 
         uint256 optionId = coverageOptionCount++;
         coverageOptions[optionId] = CoverageOption({
@@ -125,9 +193,9 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 value,
         uint256 riskScore
     ) external onlyRole(EVALUATOR_ROLE) {
-        require(tokenAddress != address(0), "Invalid token address");
-        require(value > 0, "Invalid value");
-        require(riskScore >= 1 && riskScore <= 100, "Invalid risk score");
+        if (tokenAddress == address(0)) revert InvalidTokenAddress();
+        if (value == 0) revert InvalidValue();
+        if (riskScore < 1 || riskScore > 100) revert InvalidRiskScore();
 
         rwaEvaluations[tokenAddress] = RWAEvaluation({
             tokenAddress: tokenAddress,
@@ -161,11 +229,11 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 duration,
         address tokenAddress
     ) external view returns (uint256 premium) {
-        require(coverageAmount > 0, "Invalid coverage amount");
-        require(duration > 0, "Invalid duration");
+        if (coverageAmount == 0) revert InvalidCoverageAmount();
+        if (duration == 0) revert InvalidDuration();
 
         RWAEvaluation memory evaluation = rwaEvaluations[tokenAddress];
-        require(evaluation.isValid, "Token not evaluated");
+        if (!evaluation.isValid) revert TokenNotEvaluated();
 
         // Find suitable coverage option
         uint256 selectedOptionId = type(uint256).max;
@@ -181,10 +249,8 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
                 break;
             }
         }
-        require(
-            selectedOptionId != type(uint256).max,
-            "No suitable coverage option"
-        );
+        if (selectedOptionId == type(uint256).max)
+            revert NoSuitableCoverageOption();
 
         // Calculate base premium
         premium =

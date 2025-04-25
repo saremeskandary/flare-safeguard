@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 library PercentageUtils {
     uint256 private constant MIN_PERCENTAGE = 1 * 10 ** 16;

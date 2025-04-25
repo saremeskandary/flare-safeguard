@@ -3,11 +3,13 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 import "../contracts/InsuranceCore.sol";
+import "../contracts/RoleManager.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract InsuranceCoreTest is Test {
     InsuranceCore public insuranceCore;
+    RoleManager public roleManager;
     address public admin;
     address public evaluator;
     address public user;
@@ -28,7 +30,11 @@ contract InsuranceCoreTest is Test {
         user = address(0x2);
         mockToken = address(0x3);
 
-        insuranceCore = new InsuranceCore();
+        // Deploy the role manager first
+        roleManager = new RoleManager();
+
+        // Deploy the insurance core with the role manager
+        insuranceCore = new InsuranceCore(address(roleManager));
 
         // Grant evaluator role to evaluator address
         insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), evaluator);

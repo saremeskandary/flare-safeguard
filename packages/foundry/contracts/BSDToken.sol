@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -20,6 +20,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * collateralization for the token.
  */
 contract BSDToken is ERC20, Pausable, Ownable {
+    // Custom errors
+    error MustSendETH();
+    error AmountMustBeGreaterThanZero();
+    error InsufficientBacking();
+
     uint256 private _totalBacking;
     mapping(address => uint256) private _backingAmounts;
 
@@ -41,7 +46,7 @@ contract BSDToken is ERC20, Pausable, Ownable {
      * @dev Adds ETH backing for BSD tokens
      */
     function addBacking() external payable {
-        require(msg.value > 0, "Must send ETH");
+        if (msg.value == 0) revert MustSendETH();
         _totalBacking += msg.value;
         _backingAmounts[msg.sender] += msg.value;
         emit BackingAdded(msg.sender, msg.value);
@@ -52,8 +57,8 @@ contract BSDToken is ERC20, Pausable, Ownable {
      * @param amount Amount of ETH to remove from backing
      */
     function removeBacking(uint256 amount) external whenNotPaused {
-        require(amount > 0, "Amount must be greater than 0");
-        require(_backingAmounts[msg.sender] >= amount, "Insufficient backing");
+        if (amount == 0) revert AmountMustBeGreaterThanZero();
+        if (_backingAmounts[msg.sender] < amount) revert InsufficientBacking();
         _totalBacking -= amount;
         _backingAmounts[msg.sender] -= amount;
         emit BackingRemoved(msg.sender, amount);
