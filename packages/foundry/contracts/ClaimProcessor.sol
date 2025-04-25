@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./libraries/ClaimErrors.sol";
 
 /**
  * @title Claim Processor
@@ -26,21 +27,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * remains the primary token for the platform's operations.
  */
 contract ClaimProcessor is AccessControl, ReentrancyGuard {
-    // Custom errors
-    error InvalidBSDTokenAddress();
-    error InvalidTokenAddress();
-    error InvalidCoverageAmount();
-    error InvalidPremium();
-    error InvalidDuration();
-    error PremiumTransferFailed();
-    error NoActivePolicy();
-    error PolicyExpired();
-    error AmountExceedsCoverage();
-    error InvalidClaimStatus();
-    error ClaimNotApproved();
-    error ClaimAlreadyPaid();
-    error PolicyNotActive();
-    error TransferFailed();
+    using ClaimErrors for *;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
@@ -99,7 +86,8 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     );
 
     constructor(address _bsdToken) {
-        if (_bsdToken == address(0)) revert InvalidBSDTokenAddress();
+        if (_bsdToken == address(0))
+            revert ClaimErrors.InvalidBSDTokenAddress();
         bsdToken = IERC20(_bsdToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -119,14 +107,15 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         uint256 premium,
         uint256 duration
     ) external nonReentrant {
-        if (tokenAddress == address(0)) revert InvalidTokenAddress();
-        if (coverageAmount == 0) revert InvalidCoverageAmount();
-        if (premium == 0) revert InvalidPremium();
-        if (duration == 0) revert InvalidDuration();
+        if (tokenAddress == address(0))
+            revert ClaimErrors.InvalidTokenAddress();
+        if (coverageAmount == 0) revert ClaimErrors.InvalidCoverageAmount();
+        if (premium == 0) revert ClaimErrors.InvalidPremium();
+        if (duration == 0) revert ClaimErrors.InvalidDuration();
 
         // Transfer premium
         if (!bsdToken.transferFrom(msg.sender, address(this), premium))
-            revert PremiumTransferFailed();
+            revert ClaimErrors.PremiumTransferFailed();
 
         policies[msg.sender] = InsurancePolicy({
             insured: msg.sender,
@@ -151,9 +140,11 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         string memory description
     ) external nonReentrant {
         InsurancePolicy memory policy = policies[msg.sender];
-        if (!policy.isActive) revert NoActivePolicy();
-        if (block.timestamp > policy.endTime) revert PolicyExpired();
-        if (amount > policy.coverageAmount) revert AmountExceedsCoverage();
+        if (!policy.isActive) revert ClaimErrors.PolicyNotActive();
+        if (block.timestamp > policy.endTime)
+            revert ClaimErrors.PolicyExpired();
+        if (amount > policy.coverageAmount)
+            revert ClaimErrors.AmountExceedsCoverage();
 
         uint256 claimId = claimCount++;
         claims[claimId] = Claim({
@@ -186,7 +177,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         if (
             claim.status != ClaimStatus.Pending &&
             claim.status != ClaimStatus.UnderReview
-        ) revert InvalidClaimStatus();
+        ) revert ClaimErrors.InvalidClaimStatus();
 
         claim.verifier = msg.sender;
         claim.status = approved ? ClaimStatus.Approved : ClaimStatus.Rejected;
@@ -203,16 +194,19 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
      */
     function processPayout(uint256 claimId) internal {
         Claim storage claim = claims[claimId];
-        if (claim.status != ClaimStatus.Approved) revert ClaimNotApproved();
-        if (claim.status == ClaimStatus.Paid) revert ClaimAlreadyPaid();
+        if (claim.status != ClaimStatus.Approved)
+            revert ClaimErrors.ClaimNotApproved();
+        if (claim.status == ClaimStatus.Paid)
+            revert ClaimErrors.ClaimAlreadyPaid();
 
         InsurancePolicy memory policy = policies[claim.insured];
-        if (!policy.isActive) revert PolicyNotActive();
-        if (block.timestamp > policy.endTime) revert PolicyExpired();
+        if (!policy.isActive) revert ClaimErrors.PolicyNotActive();
+        if (block.timestamp > policy.endTime)
+            revert ClaimErrors.PolicyExpired();
 
         // Transfer the claim amount to the insured
         if (!bsdToken.transfer(claim.insured, claim.amount))
-            revert TransferFailed();
+            revert ClaimErrors.TransferFailed();
 
         claim.status = ClaimStatus.Paid;
         emit ClaimPaid(claimId, claim.insured, claim.amount);

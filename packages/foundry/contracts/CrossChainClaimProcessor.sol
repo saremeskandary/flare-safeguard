@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import "./ClaimProcessor.sol";
 import "./interfaces/IFdcTransferEventListener.sol";
 import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
+import "./libraries/ClaimErrors.sol";
 
 /**
  * @title Cross Chain Claim Processor
@@ -16,13 +17,11 @@ import {IEVMTransaction} from "flare-periphery/src/coston2/IEVMTransaction.sol";
  * - Handle payouts for valid cross-chain claims
  */
 contract CrossChainClaimProcessor is ClaimProcessor {
-    // Custom errors
+    using ClaimErrors for *;
+
+    // Custom errors specific to cross-chain functionality
     error InvalidFdcListenerAddress();
-    error NoActivePolicy();
-    error PolicyExpired();
-    error AmountExceedsCoverage();
     error ClaimDoesNotExist();
-    error InvalidClaimStatus();
     error TransactionHashMismatch();
     error InsufficientConfirmations();
     error InvalidTransactionProof();
@@ -74,9 +73,11 @@ contract CrossChainClaimProcessor is ClaimProcessor {
         uint256 _amount
     ) internal returns (uint256) {
         InsurancePolicy memory policy = policies[msg.sender];
-        if (!policy.isActive) revert NoActivePolicy();
-        if (block.timestamp > policy.endTime) revert PolicyExpired();
-        if (_amount > policy.coverageAmount) revert AmountExceedsCoverage();
+        if (!policy.isActive) revert ClaimErrors.PolicyNotActive();
+        if (block.timestamp > policy.endTime)
+            revert ClaimErrors.PolicyExpired();
+        if (_amount > policy.coverageAmount)
+            revert ClaimErrors.AmountExceedsCoverage();
 
         uint256 claimId = claimCount++;
         claims[claimId] = Claim({
@@ -140,7 +141,7 @@ contract CrossChainClaimProcessor is ClaimProcessor {
     ) external onlyRole(VERIFIER_ROLE) {
         if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
         if (claims[_claimId].status != ClaimStatus.Pending)
-            revert InvalidClaimStatus();
+            revert ClaimErrors.InvalidClaimStatus();
 
         // Decode the stored metadata
         (
@@ -203,7 +204,7 @@ contract CrossChainClaimProcessor is ClaimProcessor {
     ) external onlyRole(ADMIN_ROLE) nonReentrant {
         if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
         if (claims[_claimId].status != ClaimStatus.Approved)
-            revert InvalidClaimStatus();
+            revert ClaimErrors.InvalidClaimStatus();
 
         // Process the claim using the base contract's protected function
         processPayout(_claimId);

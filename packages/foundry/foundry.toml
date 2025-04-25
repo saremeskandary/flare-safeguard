@@ -8,6 +8,8 @@ fs_permissions = [{ access = "read-write", path = "./" }]
 via_ir = true
 optimizer = true
 optimizer_runs = 200
+gas_reports = ["*"]  # Enable gas snapshots for all contracts
+env = { dotenv = ".env" }  # Load environment variables from .env
 
 [profile.release]
 via_ir = true
@@ -42,7 +44,6 @@ pgnTestnet = "https://sepolia.publicgoods.network"
 coston2 = "https://coston2.enosys.global/ext/C/rpc"
 songbird = { key = "X", chain = 16, url = "${SONGBIRD_RPC_URL}" }
 flare = { key = "X", chain = 16, url = "${FLARE_RPC_URL}" }
-
 localhost = "http://127.0.0.1:8545"
 
 [etherscan]
@@ -55,17 +56,3 @@ tab_width = 4
 quote_style = "double"
 bracket_spacing = true
 int_types = "long"
-
-# Enable gas snapshots with: forge snapshot
-[gas_reports]
-# forge snapshot --match-contract MyContract
-# Will generate gas-snapshots/MyContract.md
-
-# Optional: if you're using remappings.txt in your root directory
-# Example contents:
-# @openzeppelin=lib/openzeppelin-contracts
-# @solmate=lib/solmate
-
-# Environment loading (optional - works with `export $(cat .env | xargs)` in dev)
-[env]
-dotenv = ".env"

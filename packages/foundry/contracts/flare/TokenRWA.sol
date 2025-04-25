@@ -16,7 +16,7 @@ contract TokenRWA is ERC20, Ownable, Pausable {
     error HolderAlreadyVerified();
     error InvalidVerification();
     error InvalidHolderAddress();
-    error TransfersDisabled();
+    error TransfersCurrentlyDisabled();
     error SenderNotVerified();
     error TransferLimitExceeded();
     error RecipientNotVerified();
@@ -112,7 +112,7 @@ contract TokenRWA is ERC20, Ownable, Pausable {
         address to,
         uint256 amount
     ) internal virtual override whenNotPaused {
-        if (!transfersEnabled) revert TransfersDisabled();
+        if (!transfersEnabled) revert TransfersCurrentlyDisabled();
 
         if (from != address(0)) {
             // Skip checks for minting
