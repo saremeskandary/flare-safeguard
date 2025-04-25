@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import "./DeployHelpers.s.sol";
 import "../contracts/ClaimProcessor.sol";
 import "../contracts/InsuranceCore.sol";
-import "../contracts/RoleManager.sol";
 import "../test/mocks/MockBSDToken.sol";
 
 /**
@@ -31,13 +30,15 @@ contract SeedContracts is ScaffoldETHDeploy {
         mockToken.mint(USER_ADDRESS, 1000000 ether);
         console.log("Minted tokens to deployer and user");
 
-        // Deploy RoleManager
-        RoleManager roleManager = new RoleManager();
-        console.log("RoleManager deployed at:", address(roleManager));
-
         // Deploy InsuranceCore
-        InsuranceCore insuranceCore = new InsuranceCore(address(roleManager));
+        InsuranceCore insuranceCore = new InsuranceCore();
         console.log("InsuranceCore deployed at:", address(insuranceCore));
+
+        // Grant roles to deployer
+        insuranceCore.grantRole(insuranceCore.DEFAULT_ADMIN_ROLE(), deployer);
+        insuranceCore.grantRole(insuranceCore.ADMIN_ROLE(), deployer);
+        insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), deployer);
+        console.log("Granted roles to deployer in InsuranceCore");
 
         // Add coverage options
         insuranceCore.addCoverageOption(

@@ -5,9 +5,9 @@ import "forge-std/Script.sol";
 import "./DeployInsuranceCore.s.sol";
 import "./DeployHelpers.s.sol";
 import {DeployClaimProcessor} from "./DeployClaimProcessor.s.sol";
-import "./DeployRWA.s.sol";
 import "../contracts/TokenRWAFactory.sol";
 import "../contracts/InsuranceCore.sol";
+import "../contracts/DataVerification.sol";
 
 /**
  * @notice Main deployment script for all contracts
@@ -73,32 +73,24 @@ contract Deploy is Script {
         );
         console.log("[OK] InsuranceCore roles verified");
 
-        // Deploy RWA contracts
-        console.log("\n=== Deploying RWA Contracts ===");
-        DeployRWA rwaDeployer = new DeployRWA();
-        address rwaFactoryAddress = rwaDeployer.runWithBroadcast(
-            false,
-            deployer
-        );
+        // Deploy DataVerification
+        console.log("\n=== Deploying DataVerification ===");
+        DataVerification verification = new DataVerification();
+        address verificationAddress = address(verification);
+        console.log("DataVerification deployed at:", verificationAddress);
+
+        // Deploy TokenRWAFactory
+        console.log("\n=== Deploying TokenRWAFactory ===");
+        TokenRWAFactory factory = new TokenRWAFactory(verificationAddress);
+        address rwaFactoryAddress = address(factory);
         console.log("TokenRWAFactory deployed at:", rwaFactoryAddress);
 
-        // Double check roles in TokenRWAFactory
-        TokenRWAFactory factory = TokenRWAFactory(rwaFactoryAddress);
-        console.log("\n=== Verifying TokenRWAFactory Roles ===");
-        if (!factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer)) {
-            console.log(
-                "Granting DEFAULT_ADMIN_ROLE in TokenRWAFactory to deployer..."
-            );
-            factory.grantRole(factory.DEFAULT_ADMIN_ROLE(), deployer);
-        }
-        if (!factory.hasRole(factory.ADMIN_ROLE(), deployer)) {
-            console.log(
-                "Granting ADMIN_ROLE in TokenRWAFactory to deployer..."
-            );
-            factory.grantRole(factory.ADMIN_ROLE(), deployer);
-        }
+        // Grant roles to deployer
+        console.log("\n=== Setting up TokenRWAFactory Roles ===");
+        factory.grantRole(factory.DEFAULT_ADMIN_ROLE(), deployer);
+        factory.grantRole(factory.ADMIN_ROLE(), deployer);
 
-        // Verify TokenRWAFactory roles after granting
+        // Verify TokenRWAFactory roles
         require(
             factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer),
             "Deployer must have DEFAULT_ADMIN_ROLE in TokenRWAFactory"
@@ -109,20 +101,23 @@ contract Deploy is Script {
         );
         console.log("[OK] TokenRWAFactory roles verified");
 
-        // Deploy implementation contract if not already deployed
-        if (address(factory.implementation()) == address(0)) {
-            console.log("\n=== Deploying TokenRWA Implementation ===");
-            factory.deployImplementation();
-            console.log("TokenRWA implementation deployed");
-            require(
-                address(factory.implementation()) != address(0),
-                "TokenRWA implementation deployment failed"
-            );
-            console.log("[OK] TokenRWA implementation verified");
-        }
+        // Deploy implementation contract
+        console.log("\n=== Deploying TokenRWA Implementation ===");
+        // Switch to deployer context for implementation deployment
+        vm.stopBroadcast();
+        vm.startBroadcast(deployer);
+
+        factory.deployImplementation();
+        console.log("TokenRWA implementation deployed");
+        require(
+            address(factory.implementation()) != address(0),
+            "TokenRWA implementation deployment failed"
+        );
+        console.log("[OK] TokenRWA implementation verified");
 
         console.log("\n=== Deployment Summary ===");
         console.log("InsuranceCore:", insuranceCoreAddress);
+        console.log("DataVerification:", verificationAddress);
         console.log("TokenRWAFactory:", rwaFactoryAddress);
         console.log(
             "TokenRWA Implementation:",

@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./RoleManager.sol";
 
 /**
  * @title Insurance Core
@@ -32,7 +31,6 @@ import "./RoleManager.sol";
  */
 contract InsuranceCore is AccessControl, ReentrancyGuard {
     // Custom errors
-    error InvalidRoleManager();
     error NotAuthorized();
     error InvalidAdminAddress();
     error InvalidCoverageLimit();
@@ -68,8 +66,6 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     mapping(address => RWAEvaluation) public rwaEvaluations;
     uint256 public coverageOptionCount;
 
-    RoleManager public roleManager;
-
     event CoverageOptionAdded(
         uint256 indexed optionId,
         uint256 coverageLimit,
@@ -85,19 +81,8 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         address indexed previousAdmin,
         address indexed newAdmin
     );
-    event RoleManagerUpdated(
-        address indexed oldManager,
-        address indexed newManager
-    );
 
-    /**
-     * @dev Constructor initializes the contract and sets up initial roles
-     * @param _roleManager Address of the role manager contract
-     */
-    constructor(address _roleManager) {
-        if (_roleManager == address(0)) revert InvalidRoleManager();
-        roleManager = RoleManager(_roleManager);
-
+    constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
     }
@@ -128,19 +113,6 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         }
 
         emit AdminRoleTransferred(currentAdmin, newAdmin);
-    }
-
-    /**
-     * @dev Update the role manager address
-     * @param _roleManager New role manager address
-     */
-    function updateRoleManager(
-        address _roleManager
-    ) external onlyRole(ADMIN_ROLE) {
-        if (_roleManager == address(0)) revert InvalidRoleManager();
-        address oldManager = address(roleManager);
-        roleManager = RoleManager(_roleManager);
-        emit RoleManagerUpdated(oldManager, _roleManager);
     }
 
     /**

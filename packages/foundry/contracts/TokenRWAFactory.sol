@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./TokenRWA.sol";
-import "./RoleManager.sol";
 
 /**
  * @title TokenRWAFactory
@@ -15,7 +14,6 @@ contract TokenRWAFactory is AccessControl {
 
     TokenRWA public implementation;
     address public verificationContract;
-    RoleManager public roleManager;
 
     event TokenEvent(
         address indexed token,
@@ -23,22 +21,16 @@ contract TokenRWAFactory is AccessControl {
         string symbol,
         address indexed admin
     );
-    event ManagerUpdated(
-        address indexed oldManager,
-        address indexed newManager
-    );
 
     // Custom errors
     error InvalidAddresses();
     error ImplementationExists();
     error InvalidParameters();
 
-    constructor(address _verificationContract, address _roleManager) {
-        if (_verificationContract == address(0) || _roleManager == address(0))
-            revert InvalidAddresses();
+    constructor(address _verificationContract) {
+        if (_verificationContract == address(0)) revert InvalidAddresses();
 
         verificationContract = _verificationContract;
-        roleManager = RoleManager(_roleManager);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -70,10 +62,6 @@ contract TokenRWAFactory is AccessControl {
 
         token = Clones.clone(address(implementation));
         TokenRWA(token).initialize(name, symbol, verificationContract);
-        roleManager.registerContract(
-            token,
-            string(abi.encodePacked(name, " Token"))
-        );
 
         address factoryAdmin = msg.sender;
         TokenRWA(token).setAdminFromParent(factoryAdmin, factoryAdmin);
@@ -91,33 +79,5 @@ contract TokenRWAFactory is AccessControl {
         if (_verificationContract == address(0)) revert InvalidAddresses();
 
         verificationContract = _verificationContract;
-    }
-
-    /**
-     * @dev Update the role manager address
-     * @param _roleManager New role manager address
-     */
-    function updateRoleManager(
-        address _roleManager
-    ) external onlyRole(ADMIN_ROLE) {
-        if (_roleManager == address(0)) revert InvalidAddresses();
-
-        address oldManager = address(roleManager);
-        roleManager = RoleManager(_roleManager);
-        emit ManagerUpdated(oldManager, _roleManager);
-    }
-
-    /**
-     * @dev Synchronize admin roles across all tokens
-     * @param tokens Array of token addresses to synchronize
-     */
-    function synchronizeAdminRoles(
-        address[] calldata tokens
-    ) external onlyRole(ADMIN_ROLE) {
-        address factoryAdmin = msg.sender;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            TokenRWA(tokens[i]).setAdminFromParent(factoryAdmin, factoryAdmin);
-            emit TokenEvent(tokens[i], "", "", factoryAdmin);
-        }
     }
 }
