@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./libraries/ClaimErrors.sol";
@@ -19,18 +18,15 @@ import "./libraries/ClaimErrors.sol";
  *   * Expert review
  *   * Final settlement
  * - Handles claim payouts in USDT (Tether) for stability
- * - Includes role-based access control for different stakeholders
+ 
  *
  * This system is designed to provide insurance coverage for BSD token holders
  * while maintaining transparency and security in the claim processing workflow.
  * Claims are settled in USDT to ensure stable value for payouts, while BSD
  * remains the primary token for the platform's operations.
  */
-contract ClaimProcessor is AccessControl, ReentrancyGuard {
+contract ClaimProcessor is ReentrancyGuard {
     using ClaimErrors for *;
-
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     enum ClaimStatus {
         Pending,
@@ -89,9 +85,6 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         if (_bsdToken == address(0))
             revert ClaimErrors.InvalidBSDTokenAddress();
         bsdToken = IERC20(_bsdToken);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -172,7 +165,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         uint256 claimId,
         bool approved,
         string memory reason
-    ) external onlyRole(VERIFIER_ROLE) nonReentrant {
+    ) external nonReentrant {
         Claim storage claim = claims[claimId];
         if (
             claim.status != ClaimStatus.Pending &&
@@ -216,9 +209,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
      * @dev Public function to process claim payout
      * @param claimId ID of the claim
      */
-    function processClaimPayout(
-        uint256 claimId
-    ) external onlyRole(ADMIN_ROLE) nonReentrant {
+    function processClaimPayout(uint256 claimId) external nonReentrant {
         processPayout(claimId);
     }
 

@@ -26,6 +26,9 @@ interface ISafeguardMessageReceiver {
      * @param targetChain The ID of the chain where the message originated
      * @param data The encoded message data
      * @param timestamp The time when the message was received
+     * @param verified Whether the message has been verified
+     * @param verifiedAt The timestamp when the message was verified
+     * @param verifiedBy The address that verified the message
      */
     struct Message {
         MessageType messageType;
@@ -33,6 +36,9 @@ interface ISafeguardMessageReceiver {
         uint256 targetChain;
         bytes data;
         uint256 timestamp;
+        bool verified;
+        uint256 verifiedAt;
+        address verifiedBy;
     }
 
     /**
@@ -57,6 +63,13 @@ interface ISafeguardMessageReceiver {
     event MessageProcessed(uint256 indexed messageId, bool success);
 
     /**
+     * @dev Event emitted when a message is verified
+     * @param messageId The unique identifier for the message
+     * @param verifier The address that verified the message
+     */
+    event MessageVerified(uint256 indexed messageId, address indexed verifier);
+
+    /**
      * @dev Receive a cross-chain message
      * @param messageType The type of message
      * @param sender The address that sent the message
@@ -79,6 +92,13 @@ interface ISafeguardMessageReceiver {
     function processMessage(uint256 messageId) external returns (bool success);
 
     /**
+     * @dev Verify a received message
+     * @param messageId The ID of the message to verify
+     * @return verified Whether the message was verified successfully
+     */
+    function verifyMessage(uint256 messageId) external returns (bool verified);
+
+    /**
      * @dev Get details of a specific message
      * @param messageId The ID of the message to retrieve
      * @return message The message details
@@ -90,27 +110,39 @@ interface ISafeguardMessageReceiver {
     /**
      * @dev Get all messages of a specific type
      * @param messageType The type of messages to retrieve
-     * @return messages Array of messages of the specified type
+     * @return Array of message IDs of the specified type
      */
     function getMessagesByType(
         MessageType messageType
-    ) external view returns (Message[] memory messages);
+    ) external view returns (uint256[] memory);
 
     /**
      * @dev Get all messages from a specific sender
      * @param sender The address to filter by
-     * @return messages Array of messages from the specified sender
+     * @return Array of message IDs from the specified sender
      */
     function getMessagesBySender(
         address sender
-    ) external view returns (Message[] memory messages);
+    ) external view returns (uint256[] memory);
 
     /**
      * @dev Get all messages from a specific chain
      * @param chainId The chain ID to filter by
-     * @return messages Array of messages from the specified chain
+     * @return Array of message IDs from the specified chain
      */
     function getMessagesByChain(
         uint256 chainId
-    ) external view returns (Message[] memory messages);
+    ) external view returns (uint256[] memory);
+
+    /**
+     * @dev Get all messages
+     * @return Array of all message IDs
+     */
+    function getAllMessages() external view returns (uint256[] memory);
+
+    /**
+     * @dev Get the total number of messages
+     * @return The total number of messages
+     */
+    function getMessageCount() external view returns (uint256);
 }

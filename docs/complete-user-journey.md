@@ -7,26 +7,26 @@ This document outlines the complete user journey for the Flare Safeguard insuran
 
 ### 1. Token Creation and Setup
 1. **Create RWA Token**
-   - Developer/issuer creates a new Real World Asset (RWA) token
+   - Owner creates a new Real World Asset (RWA) token
    - Function calls:
      - `TokenRWA` constructor - Creates the token with name, symbol, and data verification address
    - This token represents a real-world asset on the blockchain
 
 2. **Token Verification Setup**
-   - Token issuer sets up verification mechanisms
+   - Token owner sets up verification mechanisms
    - Function calls:
      - `TokenRWA.verifyHolder(bytes32 requestId, bytes calldata proof)` - Verifies token holders
    - This ensures only verified entities can hold the token
 
 3. **Enable Token Transfers**
-   - Token issuer enables transfers after initial setup
+   - Token owner enables transfers after initial setup
    - Function calls:
      - `TokenRWA` internal functions to enable transfers
    - Token becomes available for trading and insurance
 
 ### 2. Insurance System Setup
 1. **Deploy Insurance Contracts**
-   - System administrator deploys the core insurance contracts:
+   - System owner deploys the core insurance contracts:
      - `InsuranceCore` - For risk assessment and premium calculation
      - `ClaimProcessor` - For handling claims
      - `Vault` - For managing insurance reserves
@@ -34,7 +34,7 @@ This document outlines the complete user journey for the Flare Safeguard insuran
      - `CrossChainClaimProcessor` - For cross-chain operations
 
 2. **Configure Coverage Options**
-   - Administrator sets up available insurance coverage options
+   - Owner sets up available insurance coverage options
    - Function calls:
      - `InsuranceCore.addCoverageOption(uint256 coverageLimit, uint256 premiumRate, uint256 minDuration, uint256 maxDuration)` - Creates coverage options
    - These options define the insurance products available to users
@@ -114,7 +114,7 @@ This document outlines the complete user journey for the Flare Safeguard insuran
 ### 6. Claim Processing
 1. **Initial Review**
    - System performs automated checks
-   - Verifiers review claim details
+   - Owner reviews claim details
    - Function calls:
      - `ClaimProcessor.reviewClaim(uint256 claimId, bool approved, string memory reason)` - Reviews claim
 

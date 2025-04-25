@@ -1,51 +1,62 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./TokenRWA.sol";
-import "./RoleManager.sol";
 
 /**
  * @title TokenRWAFactory
  * @dev Factory contract for creating new RWA tokens using minimal proxy pattern
  */
-contract TokenRWAFactory is AccessControl {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
+contract TokenRWAFactory {
     TokenRWA public implementation;
     address public verificationContract;
-    RoleManager public roleManager;
+    address public owner;
 
     event TokenEvent(
         address indexed token,
         string name,
         string symbol,
-        address indexed admin
+        address indexed owner
     );
-    event ManagerUpdated(
-        address indexed oldManager,
-        address indexed newManager
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
     );
 
     // Custom errors
     error InvalidAddresses();
     error ImplementationExists();
     error InvalidParameters();
+    error Unauthorized();
 
-    constructor(address _verificationContract, address _roleManager) {
-        if (_verificationContract == address(0) || _roleManager == address(0))
-            revert InvalidAddresses();
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
+    constructor(address _verificationContract) {
+        if (_verificationContract == address(0)) revert InvalidAddresses();
 
         verificationContract = _verificationContract;
-        roleManager = RoleManager(_roleManager);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        owner = msg.sender;
+    }
+
+    /**
+     * @dev Transfer ownership to a new address
+     * @param newOwner Address of the new owner
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert InvalidAddresses();
+        address oldOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 
     /**
      * @dev Deploy the implementation contract
      */
-    function deployImplementation() external onlyRole(ADMIN_ROLE) {
+    function deployImplementation() external onlyOwner {
         if (address(implementation) != address(0))
             revert ImplementationExists();
 
@@ -61,7 +72,7 @@ contract TokenRWAFactory is AccessControl {
     function createToken(
         string memory name,
         string memory symbol
-    ) external onlyRole(ADMIN_ROLE) returns (address token) {
+    ) external onlyOwner returns (address token) {
         if (
             address(implementation) == address(0) ||
             bytes(name).length == 0 ||
@@ -70,14 +81,11 @@ contract TokenRWAFactory is AccessControl {
 
         token = Clones.clone(address(implementation));
         TokenRWA(token).initialize(name, symbol, verificationContract);
-        roleManager.registerContract(
-            token,
-            string(abi.encodePacked(name, " Token"))
-        );
 
-        address factoryAdmin = msg.sender;
-        TokenRWA(token).setAdminFromParent(factoryAdmin, factoryAdmin);
-        emit TokenEvent(token, name, symbol, factoryAdmin);
+        // Transfer ownership of the token to the factory owner
+        TokenRWA(token).transferOwnership(msg.sender);
+
+        emit TokenEvent(token, name, symbol, msg.sender);
         return token;
     }
 
@@ -87,37 +95,8 @@ contract TokenRWAFactory is AccessControl {
      */
     function updateVerificationContract(
         address _verificationContract
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external onlyOwner {
         if (_verificationContract == address(0)) revert InvalidAddresses();
-
         verificationContract = _verificationContract;
-    }
-
-    /**
-     * @dev Update the role manager address
-     * @param _roleManager New role manager address
-     */
-    function updateRoleManager(
-        address _roleManager
-    ) external onlyRole(ADMIN_ROLE) {
-        if (_roleManager == address(0)) revert InvalidAddresses();
-
-        address oldManager = address(roleManager);
-        roleManager = RoleManager(_roleManager);
-        emit ManagerUpdated(oldManager, _roleManager);
-    }
-
-    /**
-     * @dev Synchronize admin roles across all tokens
-     * @param tokens Array of token addresses to synchronize
-     */
-    function synchronizeAdminRoles(
-        address[] calldata tokens
-    ) external onlyRole(ADMIN_ROLE) {
-        address factoryAdmin = msg.sender;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            TokenRWA(tokens[i]).setAdminFromParent(factoryAdmin, factoryAdmin);
-            emit TokenEvent(tokens[i], "", "", factoryAdmin);
-        }
     }
 }

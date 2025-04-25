@@ -66,8 +66,14 @@ export const Header = () => {
   const isLocalNetwork = targetNetwork.id === hardhat.id;
   const { address } = useAccount();
 
-  const { data: isAdmin } = useScaffoldReadContract({
+  const { data: isAdminInsuranceCore } = useScaffoldReadContract({
     contractName: "InsuranceCore",
+    functionName: "hasRole",
+    args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address],
+  });
+
+  const { data: isAdminTokenRWAFactory } = useScaffoldReadContract({
+    contractName: "TokenRWAFactory",
     functionName: "hasRole",
     args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address],
   });
@@ -119,8 +125,11 @@ export const Header = () => {
       <div className="navbar-end flex-grow mr-4">
         <div className="flex items-center gap-2">
           <RainbowKitCustomConnectButton />
-          {isAdmin && (
-            <div className="badge badge-primary">Admin</div>
+          {isAdminInsuranceCore && (
+            <div className="badge badge-primary">Admin InsuranceCore</div>
+          )}
+          {isAdminTokenRWAFactory && (
+            <div className="badge badge-secondary">Admin TokenRWAFactory</div>
           )}
           {isLocalNetwork && <FaucetButton />}
         </div>

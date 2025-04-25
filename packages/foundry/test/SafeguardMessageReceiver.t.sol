@@ -14,8 +14,7 @@ contract SafeguardMessageReceiverTest is Test {
     MockBSDToken public bsdToken;
     FdcTransferEventListener public fdcListener;
 
-    address public admin;
-    address public verifier;
+    address public owner;
     address public user;
     address public sender;
 
@@ -35,8 +34,7 @@ contract SafeguardMessageReceiverTest is Test {
 
     function setUp() public {
         // Setup accounts
-        admin = makeAddr("admin");
-        verifier = makeAddr("verifier");
+        owner = makeAddr("owner");
         user = makeAddr("user");
         sender = makeAddr("sender");
 
@@ -56,16 +54,6 @@ contract SafeguardMessageReceiverTest is Test {
         // Deploy message receiver
         messageReceiver = new SafeguardMessageReceiver(address(claimProcessor));
 
-        // Setup roles
-        messageReceiver.grantRole(messageReceiver.DEFAULT_ADMIN_ROLE(), admin);
-        messageReceiver.grantRole(
-            messageReceiver.MESSAGE_HANDLER_ROLE(),
-            admin
-        );
-        messageReceiver.grantRole(messageReceiver.VERIFIER_ROLE(), verifier);
-        claimProcessor.grantRole(claimProcessor.DEFAULT_ADMIN_ROLE(), admin);
-        claimProcessor.grantRole(claimProcessor.VERIFIER_ROLE(), verifier);
-
         // Fund accounts
         vm.deal(user, 1000 ether);
         vm.deal(sender, 1000 ether);
@@ -74,7 +62,7 @@ contract SafeguardMessageReceiverTest is Test {
         bsdToken.approve(address(claimProcessor), type(uint256).max);
     }
 
-    function test_RevertWhen_ProcessMessageWithoutAdminRole() public {
+    function test_RevertWhen_ProcessMessageWithoutOwnerPermission() public {
         bytes memory policyData = abi.encode(
             user,
             COVERAGE_AMOUNT,
@@ -82,27 +70,13 @@ contract SafeguardMessageReceiverTest is Test {
             DURATION
         );
 
-        // Create a new message receiver where the user doesn't have the MESSAGE_HANDLER_ROLE
+        // Create a new message receiver
         SafeguardMessageReceiver newMessageReceiver = new SafeguardMessageReceiver(
                 address(claimProcessor)
             );
 
-        // Set up roles correctly
-        newMessageReceiver.grantRole(
-            newMessageReceiver.DEFAULT_ADMIN_ROLE(),
-            admin
-        );
-        newMessageReceiver.grantRole(
-            newMessageReceiver.MESSAGE_HANDLER_ROLE(),
-            admin
-        );
-        newMessageReceiver.grantRole(
-            newMessageReceiver.VERIFIER_ROLE(),
-            verifier
-        );
-
         // Create a message in the new receiver
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         uint256 messageId = newMessageReceiver.receiveMessage(
             ISafeguardMessageReceiver.MessageType.PolicyCreation,
             sender,
@@ -111,36 +85,21 @@ contract SafeguardMessageReceiverTest is Test {
         );
         vm.stopPrank();
 
-        // Ensure user doesn't have the MESSAGE_HANDLER_ROLE
-        assertFalse(
-            newMessageReceiver.hasRole(
-                newMessageReceiver.MESSAGE_HANDLER_ROLE(),
-                user
-            )
-        );
-
         // Try to process the message as the user (should revert)
         vm.startPrank(user);
-        bytes memory expectedError = abi.encodeWithSelector(
-            bytes4(
-                keccak256("AccessControlUnauthorizedAccount(address,bytes32)")
-            ),
-            user,
-            newMessageReceiver.MESSAGE_HANDLER_ROLE()
-        );
-        vm.expectRevert(expectedError);
+        vm.expectRevert("Ownable: caller is not the owner");
         newMessageReceiver.processMessage(messageId);
         vm.stopPrank();
     }
 
     function test_RevertWhen_ProcessNonExistentMessage() public {
-        vm.prank(admin);
+        vm.prank(owner);
         vm.expectRevert("Message does not exist");
         messageReceiver.processMessage(999);
     }
 
     function testReceiveMessage() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         bytes memory encodedData = abi.encode("test data");
 
         uint256 expectedMessageId = 0; // First message ID should be 0
@@ -190,7 +149,7 @@ contract SafeguardMessageReceiverTest is Test {
             encodedData
         );
 
-        vm.prank(admin);
+        vm.prank(owner);
         vm.expectEmit(true, true, true, true);
         emit MessageProcessed(
             0, // First message ID should be 0
@@ -214,7 +173,7 @@ contract SafeguardMessageReceiverTest is Test {
         vm.stopPrank();
 
         // Now submit a claim with the correct data format
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         bytes32 transactionHash = keccak256("test_tx");
         uint256 chainId = 11155111; // Sepolia
         uint16 requiredConfirmations = 12;
@@ -276,14 +235,17 @@ contract SafeguardMessageReceiverTest is Test {
             claimData
         );
 
-        ISafeguardMessageReceiver.Message[]
-            memory policyMessages = messageReceiver.getMessagesByType(
-                ISafeguardMessageReceiver.MessageType.PolicyCreation
-            );
+        uint256[] memory policyMessageIds = messageReceiver.getMessagesByType(
+            ISafeguardMessageReceiver.MessageType.PolicyCreation
+        );
 
-        assertEq(policyMessages.length, 1);
+        assertEq(policyMessageIds.length, 1);
+
+        // Get the message using the ID
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(policyMessageIds[0]);
         assertEq(
-            uint256(policyMessages[0].messageType),
+            uint256(message.messageType),
             uint256(ISafeguardMessageReceiver.MessageType.PolicyCreation)
         );
     }
@@ -312,10 +274,15 @@ contract SafeguardMessageReceiverTest is Test {
             policyData
         );
 
-        ISafeguardMessageReceiver.Message[]
-            memory senderMessages = messageReceiver.getMessagesBySender(sender);
-        assertEq(senderMessages.length, 1);
-        assertEq(senderMessages[0].sender, sender);
+        uint256[] memory senderMessageIds = messageReceiver.getMessagesBySender(
+            sender
+        );
+        assertEq(senderMessageIds.length, 1);
+
+        // Get the message using the ID
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(senderMessageIds[0]);
+        assertEq(message.sender, sender);
     }
 
     function testGetMessagesByChain() public {
@@ -342,16 +309,19 @@ contract SafeguardMessageReceiverTest is Test {
             policyData
         );
 
-        ISafeguardMessageReceiver.Message[]
-            memory chainMessages = messageReceiver.getMessagesByChain(
-                block.chainid
-            );
-        assertEq(chainMessages.length, 1);
-        assertEq(chainMessages[0].targetChain, block.chainid);
+        uint256[] memory chainMessageIds = messageReceiver.getMessagesByChain(
+            block.chainid
+        );
+        assertEq(chainMessageIds.length, 1);
+
+        // Get the message using the ID
+        ISafeguardMessageReceiver.Message memory message = messageReceiver
+            .getMessage(chainMessageIds[0]);
+        assertEq(message.targetChain, block.chainid);
     }
 
     function testReceiveMessageWithInvalidSender() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         sender = address(0);
         bytes memory encodedData = abi.encode("test data");
 
@@ -366,7 +336,7 @@ contract SafeguardMessageReceiverTest is Test {
     }
 
     function testReceiveMessageWithInvalidData() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         bytes memory encodedData = "";
 
         uint256 expectedMessageId = 0;
@@ -402,7 +372,7 @@ contract SafeguardMessageReceiverTest is Test {
     }
 
     function testReceiveMessageWithInvalidTargetChain() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         targetChain = 0;
         bytes memory encodedData = abi.encode("test data");
 
@@ -417,7 +387,7 @@ contract SafeguardMessageReceiverTest is Test {
     }
 
     function testReceiveMessageWithInvalidEncodedData() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         bytes memory encodedData = abi.encode("invalid data");
 
         uint256 expectedMessageId = 0;

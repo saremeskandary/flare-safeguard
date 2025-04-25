@@ -2,7 +2,6 @@
 pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./BSDToken.sol";
@@ -23,7 +22,7 @@ import "./BSDToken.sol";
  * while incentivizing long-term liquidity provision through fee sharing and
  * reward mechanisms.
  */
-contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
+contract BSDLiquidityPool is ReentrancyGuard, Pausable {
     // Custom errors
     error InvalidBSDTokenAddress();
     error InvalidUSDTTokenAddress();
@@ -34,8 +33,6 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
     error InsufficientShares();
     error AmountMustBeGreaterThanZero();
     error InsufficientOutputAmount();
-
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     BSDToken public immutable bsdToken;
     IERC20 public immutable usdtToken;
@@ -80,9 +77,6 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
 
         bsdToken = BSDToken(_bsdToken);
         usdtToken = IERC20(_usdtToken);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
     }
 
     /**
@@ -208,20 +202,6 @@ contract BSDLiquidityPool is AccessControl, ReentrancyGuard, Pausable {
         totalBSD -= bsdOut;
 
         emit Swap(msg.sender, 0, usdtIn, bsdOut, 0);
-    }
-
-    /**
-     * @dev Pause all pool operations
-     */
-    function pause() external onlyRole(ADMIN_ROLE) {
-        _pause();
-    }
-
-    /**
-     * @dev Unpause all pool operations
-     */
-    function unpause() external onlyRole(ADMIN_ROLE) {
-        _unpause();
     }
 
     /**

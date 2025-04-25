@@ -42,18 +42,6 @@ contract DeployClaimProcessor is ScaffoldETHDeploy {
         console.log("ClaimProcessor deployed at:", address(claimProcessor));
         deployments.push(Deployment("ClaimProcessor", address(claimProcessor)));
 
-        // Grant roles to deployer
-        console.log(
-            "Granting DEFAULT_ADMIN_ROLE to deployer on ClaimProcessor..."
-        );
-        claimProcessor.grantRole(claimProcessor.DEFAULT_ADMIN_ROLE(), deployer);
-
-        console.log("Granting ADMIN_ROLE on ClaimProcessor...");
-        claimProcessor.grantRole(claimProcessor.ADMIN_ROLE(), deployer);
-
-        console.log("Granting VERIFIER_ROLE on ClaimProcessor...");
-        claimProcessor.grantRole(claimProcessor.VERIFIER_ROLE(), deployer);
-
         console.log("ClaimProcessor deployment completed successfully!");
     }
 
@@ -76,18 +64,6 @@ contract DeployClaimProcessor is ScaffoldETHDeploy {
         );
         console.log("ClaimProcessor deployed at:", address(claimProcessor));
         deployments.push(Deployment("ClaimProcessor", address(claimProcessor)));
-
-        // Grant roles to deployer
-        console.log(
-            "Granting DEFAULT_ADMIN_ROLE to deployer on ClaimProcessor..."
-        );
-        claimProcessor.grantRole(claimProcessor.DEFAULT_ADMIN_ROLE(), deployer);
-
-        console.log("Granting ADMIN_ROLE on ClaimProcessor...");
-        claimProcessor.grantRole(claimProcessor.ADMIN_ROLE(), deployer);
-
-        console.log("Granting VERIFIER_ROLE on ClaimProcessor...");
-        claimProcessor.grantRole(claimProcessor.VERIFIER_ROLE(), deployer);
 
         console.log("ClaimProcessor deployment completed successfully!");
     }

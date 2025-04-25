@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import {console2} from "forge-std/Test.sol";
 import {FtsoV2Interface} from "flare-periphery/src/coston2/FtsoV2Interface.sol";
 import {IFeeCalculator} from "flare-periphery/src/coston2/IFeeCalculator.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/IFtsoV2FeedConsumer.sol";
 
 /**
@@ -25,16 +24,12 @@ import "./interfaces/IFtsoV2FeedConsumer.sol";
  * This contract is designed to work with Flare's Coston2 testnet and can be
  * adapted for other Flare networks by updating the feed IDs and interfaces.
  */
-contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
+contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer {
     // Custom errors
     error InvalidSymbol();
     error SymbolAlreadyMonitored();
     error SymbolNotMonitored();
     error InvalidTimestamp();
-
-    bytes32 public constant PRICE_UPDATER_ROLE =
-        keccak256("PRICE_UPDATER_ROLE");
-    bytes32 public constant FEED_MANAGER_ROLE = keccak256("FEED_MANAGER_ROLE");
 
     FtsoV2Interface internal ftsoV2;
     IFeeCalculator internal feeCalc;
@@ -65,9 +60,6 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         feeCalc = IFeeCalculator(_feeCalc);
         flrUsdId = _flrUsdId;
         feedIds.push(_flrUsdId);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PRICE_UPDATER_ROLE, msg.sender);
-        _grantRole(FEED_MANAGER_ROLE, msg.sender);
     }
 
     /**
@@ -122,7 +114,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
     function addPriceFeed(
         string calldata symbol,
         uint8 decimals
-    ) external override onlyRole(FEED_MANAGER_ROLE) returns (bool success) {
+    ) external override returns (bool success) {
         if (bytes(symbol).length == 0) revert InvalidSymbol();
         if (_isMonitored[symbol]) revert SymbolAlreadyMonitored();
 
@@ -149,7 +141,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
      */
     function removePriceFeed(
         string calldata symbol
-    ) external override onlyRole(FEED_MANAGER_ROLE) returns (bool success) {
+    ) external override returns (bool success) {
         if (!_isMonitored[symbol]) revert SymbolNotMonitored();
 
         // Find the index of the symbol in the array
@@ -190,7 +182,7 @@ contract FtsoV2FeedConsumer is IFtsoV2FeedConsumer, AccessControl {
         string calldata symbol,
         uint256 price,
         uint256 timestamp
-    ) external override onlyRole(PRICE_UPDATER_ROLE) returns (bool success) {
+    ) external override returns (bool success) {
         if (!_isMonitored[symbol]) revert SymbolNotMonitored();
         if (timestamp > block.timestamp) revert InvalidTimestamp();
 

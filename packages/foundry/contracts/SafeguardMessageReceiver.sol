@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISafeguardMessageReceiver.sol";
 import "./CrossChainClaimProcessor.sol";
 
@@ -21,17 +21,13 @@ import "./CrossChainClaimProcessor.sol";
  * - Provides a standardized interface for handling cross-chain messages
  * - Supports the BSD Insurance Protocol's cross-chain capabilities
  */
-contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
+contract SafeguardMessageReceiver is ISafeguardMessageReceiver, Ownable {
     // Custom errors
     error InvalidClaimProcessorAddress();
     error InvalidSenderAddress();
     error InvalidChainId();
     error MessageDoesNotExist();
     error UnknownMessageType();
-
-    bytes32 public constant MESSAGE_HANDLER_ROLE =
-        keccak256("MESSAGE_HANDLER_ROLE");
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     // Mapping from message ID to Message
     mapping(uint256 => Message) private _messages;
@@ -58,14 +54,10 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      * @dev Constructor initializes the contract with required dependencies
      * @param _claimProcessor Address of the CrossChainClaimProcessor contract
      */
-    constructor(address _claimProcessor) {
+    constructor(address _claimProcessor) Ownable(msg.sender) {
         if (_claimProcessor == address(0))
             revert InvalidClaimProcessorAddress();
         claimProcessor = CrossChainClaimProcessor(_claimProcessor);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MESSAGE_HANDLER_ROLE, msg.sender);
-        _grantRole(VERIFIER_ROLE, msg.sender);
     }
 
     /**
@@ -81,12 +73,7 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
         address sender,
         uint256 targetChain,
         bytes calldata data
-    )
-        external
-        override
-        onlyRole(MESSAGE_HANDLER_ROLE)
-        returns (uint256 messageId)
-    {
+    ) external override onlyOwner returns (uint256 messageId) {
         if (sender == address(0)) revert InvalidSenderAddress();
         if (targetChain == 0) revert InvalidChainId();
 
@@ -97,7 +84,10 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
             sender: sender,
             targetChain: targetChain,
             data: data,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            verified: false,
+            verifiedAt: 0,
+            verifiedBy: address(0)
         });
 
         _messages[messageId] = newMessage;
@@ -118,7 +108,7 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      */
     function processMessage(
         uint256 messageId
-    ) external override onlyRole(MESSAGE_HANDLER_ROLE) returns (bool success) {
+    ) external override onlyOwner returns (bool success) {
         if (_messages[messageId].sender == address(0))
             revert MessageDoesNotExist();
 
@@ -142,13 +132,33 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
     }
 
     /**
+     * @dev Verify a received message
+     * @param messageId The ID of the message to verify
+     * @return verified Whether the message was verified successfully
+     */
+    function verifyMessage(
+        uint256 messageId
+    ) external override onlyOwner returns (bool verified) {
+        if (_messages[messageId].sender == address(0))
+            revert MessageDoesNotExist();
+
+        Message storage message = _messages[messageId];
+        message.verified = true;
+        message.verifiedAt = block.timestamp;
+        message.verifiedBy = msg.sender;
+
+        emit MessageVerified(messageId, msg.sender);
+        return true;
+    }
+
+    /**
      * @dev Get details of a specific message
      * @param messageId The ID of the message to retrieve
      * @return message The message details
      */
     function getMessage(
         uint256 messageId
-    ) external view override returns (Message memory message) {
+    ) external view override returns (Message memory) {
         if (_messages[messageId].sender == address(0))
             revert MessageDoesNotExist();
         return _messages[messageId];
@@ -161,15 +171,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      */
     function getMessagesByType(
         MessageType messageType
-    ) external view override returns (Message[] memory messages) {
-        uint256[] memory messageIds = _messagesByType[messageType];
-        messages = new Message[](messageIds.length);
-
-        for (uint256 i = 0; i < messageIds.length; i++) {
-            messages[i] = _messages[messageIds[i]];
-        }
-
-        return messages;
+    ) external view override returns (uint256[] memory) {
+        return _messagesByType[messageType];
     }
 
     /**
@@ -179,15 +182,8 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      */
     function getMessagesBySender(
         address sender
-    ) external view override returns (Message[] memory messages) {
-        uint256[] memory messageIds = _messagesBySender[sender];
-        messages = new Message[](messageIds.length);
-
-        for (uint256 i = 0; i < messageIds.length; i++) {
-            messages[i] = _messages[messageIds[i]];
-        }
-
-        return messages;
+    ) external view override returns (uint256[] memory) {
+        return _messagesBySender[sender];
     }
 
     /**
@@ -197,15 +193,29 @@ contract SafeguardMessageReceiver is ISafeguardMessageReceiver, AccessControl {
      */
     function getMessagesByChain(
         uint256 chainId
-    ) external view override returns (Message[] memory messages) {
-        uint256[] memory messageIds = _messagesByChain[chainId];
-        messages = new Message[](messageIds.length);
+    ) external view override returns (uint256[] memory) {
+        return _messagesByChain[chainId];
+    }
 
-        for (uint256 i = 0; i < messageIds.length; i++) {
-            messages[i] = _messages[messageIds[i]];
-        }
+    /**
+     * @dev Get all messages
+     * @return messages Array of all messages
+     */
+    function getAllMessages()
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {
+        return _messageIds;
+    }
 
-        return messages;
+    /**
+     * @dev Get the total number of messages
+     * @return messageCount The total number of messages
+     */
+    function getMessageCount() external view override returns (uint256) {
+        return _messageCount;
     }
 
     /**

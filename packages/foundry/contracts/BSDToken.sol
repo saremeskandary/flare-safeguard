@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title BSD Token (Backed Stable Digital Token)
@@ -19,7 +18,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * ERC20 token functionality. The backing mechanism provides value stability and
  * collateralization for the token.
  */
-contract BSDToken is ERC20, Pausable, Ownable {
+contract BSDToken is ERC20, Pausable {
     // Custom errors
     error MustSendETH();
     error AmountMustBeGreaterThanZero();
@@ -31,14 +30,14 @@ contract BSDToken is ERC20, Pausable, Ownable {
     event BackingAdded(address indexed account, uint256 amount);
     event BackingRemoved(address indexed account, uint256 amount);
 
-    constructor() ERC20("BSD Token", "BSD") Ownable(msg.sender) {}
+    constructor() ERC20("BSD Token", "BSD") {}
 
     /**
      * @dev Mints new BSD tokens
      * @param to Address to receive the minted tokens
      * @param amount Amount of tokens to mint
      */
-    function mint(address to, uint256 amount) external onlyOwner whenNotPaused {
+    function mint(address to, uint256 amount) external whenNotPaused {
         _mint(to, amount);
     }
 
@@ -83,14 +82,14 @@ contract BSDToken is ERC20, Pausable, Ownable {
     /**
      * @dev Pauses all token transfers and minting
      */
-    function pause() external onlyOwner {
+    function pause() external {
         _pause();
     }
 
     /**
      * @dev Unpauses all token transfers and minting
      */
-    function unpause() external onlyOwner {
+    function unpause() external {
         _unpause();
     }
 

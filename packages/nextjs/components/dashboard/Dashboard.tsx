@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
 import { InsuranceOptions } from "./InsuranceOptions";
 import { PolicyDetails } from "./PolicyDetails";
@@ -12,20 +11,7 @@ import { TokenCreation } from "./TokenCreation";
 import { RoleManagement } from "./RoleManagement";
 
 export const Dashboard = () => {
-    const { address } = useAccount();
     const [activeTab, setActiveTab] = useState<string>("browse");
-
-    const { data: isAdmin } = useScaffoldReadContract({
-        contractName: "InsuranceCore",
-        functionName: "hasRole",
-        args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address],
-    });
-
-    const { data: isVerifier } = useScaffoldReadContract({
-        contractName: "InsuranceCore",
-        functionName: "hasRole",
-        args: ["0x0000000000000000000000000000000000000000000000000000000000000001", address],
-    });
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -83,36 +69,35 @@ export const Dashboard = () => {
                 >
                     Submit Claim
                 </button>
-                {isVerifier && (
+
+                <button
+                    className={`tab ${activeTab === "verify-claims" ? "tab-active" : ""}`}
+                    onClick={() => setActiveTab("verify-claims")}
+                >
+                    Verify Claims
+                </button>
+
+
+                <>
                     <button
-                        className={`tab ${activeTab === "verify-claims" ? "tab-active" : ""}`}
-                        onClick={() => setActiveTab("verify-claims")}
+                        className={`tab ${activeTab === "create" ? "tab-active" : ""}`}
+                        onClick={() => setActiveTab("create")}
                     >
-                        Verify Claims
+                        Create Policy
                     </button>
-                )}
-                {isAdmin && (
-                    <>
-                        <button
-                            className={`tab ${activeTab === "create" ? "tab-active" : ""}`}
-                            onClick={() => setActiveTab("create")}
-                        >
-                            Create Policy
-                        </button>
-                        <button
-                            className={`tab ${activeTab === "create-token" ? "tab-active" : ""}`}
-                            onClick={() => setActiveTab("create-token")}
-                        >
-                            Create Token
-                        </button>
-                        <button
-                            className={`tab ${activeTab === "manage-roles" ? "tab-active" : ""}`}
-                            onClick={() => setActiveTab("manage-roles")}
-                        >
-                            Manage Roles
-                        </button>
-                    </>
-                )}
+                    <button
+                        className={`tab ${activeTab === "create-token" ? "tab-active" : ""}`}
+                        onClick={() => setActiveTab("create-token")}
+                    >
+                        Create Token
+                    </button>
+                    <button
+                        className={`tab ${activeTab === "manage-roles" ? "tab-active" : ""}`}
+                        onClick={() => setActiveTab("manage-roles")}
+                    >
+                        Manage Roles
+                    </button>
+                </>
             </div>
 
             <div className="bg-base-100 rounded-lg shadow-lg p-6">

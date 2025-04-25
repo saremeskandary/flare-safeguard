@@ -138,7 +138,7 @@ contract CrossChainClaimProcessor is ClaimProcessor {
     function verifyCrossChainClaim(
         uint256 _claimId,
         IEVMTransaction.Proof calldata _proof
-    ) external onlyRole(VERIFIER_ROLE) {
+    ) external {
         if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
         if (claims[_claimId].status != ClaimStatus.Pending)
             revert ClaimErrors.InvalidClaimStatus();
@@ -199,9 +199,7 @@ contract CrossChainClaimProcessor is ClaimProcessor {
      * @dev Process a verified cross-chain claim
      * @param _claimId The ID of the claim to process
      */
-    function processCrossChainClaim(
-        uint256 _claimId
-    ) external onlyRole(ADMIN_ROLE) nonReentrant {
+    function processCrossChainClaim(uint256 _claimId) external nonReentrant {
         if (!_claimExists(_claimId)) revert ClaimDoesNotExist();
         if (claims[_claimId].status != ClaimStatus.Approved)
             revert ClaimErrors.InvalidClaimStatus();

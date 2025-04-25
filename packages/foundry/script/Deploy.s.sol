@@ -12,7 +12,6 @@ import "../contracts/InsuranceCore.sol";
 /**
  * @notice Main deployment script for all contracts
  * @dev Run this when you want to deploy multiple contracts at once
- * Ensures deployer has admin roles in all contracts
  *
  * Example: yarn deploy # runs this script(without`--file` flag)
  */
@@ -33,46 +32,6 @@ contract Deploy is Script {
         address insuranceCoreAddress = deployerContract.runWithBroadcast(false);
         console.log("InsuranceCore deployed at:", insuranceCoreAddress);
 
-        // Double check roles in InsuranceCore
-        InsuranceCore insuranceCore = InsuranceCore(insuranceCoreAddress);
-        console.log("\n=== Verifying InsuranceCore Roles ===");
-        if (
-            !insuranceCore.hasRole(insuranceCore.DEFAULT_ADMIN_ROLE(), deployer)
-        ) {
-            console.log(
-                "Granting DEFAULT_ADMIN_ROLE in InsuranceCore to deployer..."
-            );
-            insuranceCore.grantRole(
-                insuranceCore.DEFAULT_ADMIN_ROLE(),
-                deployer
-            );
-        }
-        if (!insuranceCore.hasRole(insuranceCore.ADMIN_ROLE(), deployer)) {
-            console.log("Granting ADMIN_ROLE in InsuranceCore to deployer...");
-            insuranceCore.grantRole(insuranceCore.ADMIN_ROLE(), deployer);
-        }
-        if (!insuranceCore.hasRole(insuranceCore.EVALUATOR_ROLE(), deployer)) {
-            console.log(
-                "Granting EVALUATOR_ROLE in InsuranceCore to deployer..."
-            );
-            insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), deployer);
-        }
-
-        // Verify InsuranceCore roles after granting
-        require(
-            insuranceCore.hasRole(insuranceCore.DEFAULT_ADMIN_ROLE(), deployer),
-            "Deployer must have DEFAULT_ADMIN_ROLE in InsuranceCore"
-        );
-        require(
-            insuranceCore.hasRole(insuranceCore.ADMIN_ROLE(), deployer),
-            "Deployer must have ADMIN_ROLE in InsuranceCore"
-        );
-        require(
-            insuranceCore.hasRole(insuranceCore.EVALUATOR_ROLE(), deployer),
-            "Deployer must have EVALUATOR_ROLE in InsuranceCore"
-        );
-        console.log("[OK] InsuranceCore roles verified");
-
         // Deploy RWA contracts
         console.log("\n=== Deploying RWA Contracts ===");
         DeployRWA rwaDeployer = new DeployRWA();
@@ -82,34 +41,8 @@ contract Deploy is Script {
         );
         console.log("TokenRWAFactory deployed at:", rwaFactoryAddress);
 
-        // Double check roles in TokenRWAFactory
-        TokenRWAFactory factory = TokenRWAFactory(rwaFactoryAddress);
-        console.log("\n=== Verifying TokenRWAFactory Roles ===");
-        if (!factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer)) {
-            console.log(
-                "Granting DEFAULT_ADMIN_ROLE in TokenRWAFactory to deployer..."
-            );
-            factory.grantRole(factory.DEFAULT_ADMIN_ROLE(), deployer);
-        }
-        if (!factory.hasRole(factory.ADMIN_ROLE(), deployer)) {
-            console.log(
-                "Granting ADMIN_ROLE in TokenRWAFactory to deployer..."
-            );
-            factory.grantRole(factory.ADMIN_ROLE(), deployer);
-        }
-
-        // Verify TokenRWAFactory roles after granting
-        require(
-            factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer),
-            "Deployer must have DEFAULT_ADMIN_ROLE in TokenRWAFactory"
-        );
-        require(
-            factory.hasRole(factory.ADMIN_ROLE(), deployer),
-            "Deployer must have ADMIN_ROLE in TokenRWAFactory"
-        );
-        console.log("[OK] TokenRWAFactory roles verified");
-
         // Deploy implementation contract if not already deployed
+        TokenRWAFactory factory = TokenRWAFactory(rwaFactoryAddress);
         if (address(factory.implementation()) == address(0)) {
             console.log("\n=== Deploying TokenRWA Implementation ===");
             factory.deployImplementation();
@@ -129,7 +62,7 @@ contract Deploy is Script {
             address(factory.implementation())
         );
         console.log("Deployer:", deployer);
-        console.log("All roles verified and contracts deployed successfully!");
+        console.log("All contracts deployed successfully!");
         console.log("========================");
 
         vm.stopBroadcast();

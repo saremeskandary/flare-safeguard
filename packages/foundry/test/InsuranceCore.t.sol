@@ -3,15 +3,11 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/Test.sol";
 import "../contracts/InsuranceCore.sol";
-import "../contracts/RoleManager.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract InsuranceCoreTest is Test {
     InsuranceCore public insuranceCore;
-    RoleManager public roleManager;
-    address public admin;
-    address public evaluator;
+    address public owner;
     address public user;
     address public mockToken;
 
@@ -22,22 +18,13 @@ contract InsuranceCoreTest is Test {
     );
     event RWAEvaluated(address indexed token, uint256 value, uint256 riskScore);
 
-    error AccessControlUnauthorizedAccount(address account, bytes32 role);
-
     function setUp() public {
-        admin = address(this);
-        evaluator = address(0x1);
+        owner = address(this);
         user = address(0x2);
         mockToken = address(0x3);
 
-        // Deploy the role manager first
-        roleManager = new RoleManager();
-
-        // Deploy the insurance core with the role manager
-        insuranceCore = new InsuranceCore(address(roleManager));
-
-        // Grant evaluator role to evaluator address
-        insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), evaluator);
+        // Deploy the insurance core
+        insuranceCore = new InsuranceCore();
     }
 
     function testAddCoverageOption() public {
@@ -75,7 +62,6 @@ contract InsuranceCoreTest is Test {
         uint256 value = 1000 ether;
         uint256 riskScore = 50;
 
-        vm.prank(evaluator);
         vm.expectEmit(true, true, true, true);
         emit RWAEvaluated(mockToken, value, riskScore);
 
@@ -104,7 +90,6 @@ contract InsuranceCoreTest is Test {
         );
 
         // Evaluate RWA token
-        vm.prank(evaluator);
         insuranceCore.evaluateRWA(mockToken, 1000 ether, 50);
 
         // Calculate premium
@@ -122,26 +107,14 @@ contract InsuranceCoreTest is Test {
 
     function test_RevertWhen_UnauthorizedAddCoverageOption() public {
         vm.startPrank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                AccessControlUnauthorizedAccount.selector,
-                user,
-                insuranceCore.ADMIN_ROLE()
-            )
-        );
+        vm.expectRevert("Ownable: caller is not the owner");
         insuranceCore.addCoverageOption(1000 ether, 100, 30 days, 365 days);
         vm.stopPrank();
     }
 
     function test_RevertWhen_UnauthorizedEvaluateRWA() public {
         vm.startPrank(user);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                AccessControlUnauthorizedAccount.selector,
-                user,
-                insuranceCore.EVALUATOR_ROLE()
-            )
-        );
+        vm.expectRevert("Ownable: caller is not the owner");
         insuranceCore.evaluateRWA(mockToken, 1000 ether, 50);
         vm.stopPrank();
     }
@@ -155,7 +128,6 @@ contract InsuranceCoreTest is Test {
 
     function test_RevertWhen_CalculatePremiumNoSuitableOption() public {
         // Evaluate RWA token
-        vm.prank(evaluator);
         insuranceCore.evaluateRWA(mockToken, 1000 ether, 50);
 
         // Try to calculate premium with amount exceeding coverage limit

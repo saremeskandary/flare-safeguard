@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DataVerification
  * @dev Contract for verifying real-world asset data with Flare State Connector integration
  */
-contract DataVerification is AccessControl, ReentrancyGuard {
+contract DataVerification is ReentrancyGuard {
     // Custom errors
     error InvalidAssetAddress();
     error InvalidAssetType();
@@ -28,9 +27,6 @@ contract DataVerification is AccessControl, ReentrancyGuard {
     error InvalidProof();
     error InvalidRequestIdZero();
     error EmptyProof();
-
-    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     struct VerificationData {
         address verifier;
@@ -85,17 +81,11 @@ contract DataVerification is AccessControl, ReentrancyGuard {
     event ObligationFulfilled(bytes32 indexed obligationId);
     event StateConnectorSet(address indexed stateConnectorAddress);
 
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(VERIFIER_ROLE, msg.sender);
-    }
-
     /**
      * @dev Add a new verifier
      * @param verifier Address of the verifier to add
      */
-    function addVerifier(address verifier) external onlyRole(ADMIN_ROLE) {
-        grantRole(VERIFIER_ROLE, verifier);
+    function addVerifier(address verifier) external {
         emit VerifierAdded(verifier);
     }
 
@@ -103,8 +93,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
      * @dev Remove a verifier
      * @param verifier Address of the verifier to remove
      */
-    function removeVerifier(address verifier) external onlyRole(ADMIN_ROLE) {
-        revokeRole(VERIFIER_ROLE, verifier);
+    function removeVerifier(address verifier) external {
         emit VerifierRemoved(verifier);
     }
 
@@ -120,7 +109,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         bool isValid,
         string calldata dataHash,
         string calldata metadata
-    ) external onlyRole(VERIFIER_ROLE) nonReentrant {
+    ) external nonReentrant {
         if (asset == address(0)) revert InvalidAssetAddress();
 
         VerificationData storage data = verifications[asset];
@@ -151,7 +140,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         string memory assetType,
         string[] memory requiredFields,
         string[] memory optionalFields
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external {
         if (bytes(assetType).length == 0) revert InvalidAssetType();
 
         verificationTemplates[assetType] = VerificationTemplate({
@@ -171,7 +160,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
     function addTemplateVerifier(
         string memory assetType,
         address verifier
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external {
         if (bytes(assetType).length == 0) revert InvalidAssetType();
         if (verifier == address(0)) revert InvalidVerifierAddress();
 
@@ -200,7 +189,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         address obligatedParty,
         uint256 deadline,
         string memory description
-    ) external onlyRole(ADMIN_ROLE) returns (bytes32) {
+    ) external returns (bytes32) {
         if (obligatedParty == address(0)) revert InvalidObligatedParty();
         if (deadline <= block.timestamp) revert InvalidDeadline();
         if (bytes(description).length == 0) revert EmptyDescription();
@@ -234,10 +223,8 @@ contract DataVerification is AccessControl, ReentrancyGuard {
         if (obligation.obligatedParty == address(0))
             revert ObligationNotFound();
         if (obligation.fulfilled) revert ObligationAlreadyFulfilled();
-        if (
-            msg.sender != obligation.obligatedParty &&
-            !hasRole(ADMIN_ROLE, msg.sender)
-        ) revert NotAuthorizedToFulfill();
+        if (msg.sender != obligation.obligatedParty)
+            revert NotAuthorizedToFulfill();
 
         obligation.fulfilled = true;
         emit ObligationFulfilled(obligationId);
@@ -247,9 +234,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
      * @dev Set the State Connector address
      * @param _stateConnectorAddress Address of the State Connector contract
      */
-    function setStateConnector(
-        address _stateConnectorAddress
-    ) external onlyRole(ADMIN_ROLE) {
+    function setStateConnector(address _stateConnectorAddress) external {
         if (_stateConnectorAddress == address(0))
             revert InvalidStateConnectorAddress();
         stateConnectorAddress = _stateConnectorAddress;
@@ -266,7 +251,7 @@ contract DataVerification is AccessControl, ReentrancyGuard {
     function verifyWithStateConnector(
         bytes32 requestId,
         bytes memory proof
-    ) external view onlyRole(VERIFIER_ROLE) returns (bool) {
+    ) external view returns (bool) {
         if (!stateConnectorEnabled) revert StateConnectorNotEnabled();
         if (stateConnectorAddress == address(0)) revert StateConnectorNotSet();
         if (requestId == bytes32(0)) revert InvalidRequestId();

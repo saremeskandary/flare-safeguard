@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract ClaimProcessorTest is Test {
     ClaimProcessor public claimProcessor;
     MockBSDToken public mockToken;
+    address public owner;
     address public user;
-    address public verifier;
 
     event PolicyCreated(
         address indexed insured,
@@ -39,13 +39,10 @@ contract ClaimProcessorTest is Test {
     error InsufficientBalance();
 
     function setUp() public {
+        owner = address(this);
         user = address(0x2);
-        verifier = address(0x1);
         mockToken = new MockBSDToken();
         claimProcessor = new ClaimProcessor(address(mockToken));
-
-        // Grant verifier role to verifier address
-        claimProcessor.grantRole(claimProcessor.VERIFIER_ROLE(), verifier);
 
         // Mint tokens to user
         mockToken.mint(user, 1000 ether);
@@ -157,7 +154,7 @@ contract ClaimProcessorTest is Test {
         claimProcessor.submitClaim(500 ether, "Test claim");
         vm.stopPrank();
 
-        vm.prank(verifier);
+        vm.prank(owner);
         vm.expectEmit(true, true, true, true);
         emit ClaimStatusUpdated(0, ClaimProcessor.ClaimStatus.Approved);
         claimProcessor.reviewClaim(0, true, "");
@@ -174,7 +171,7 @@ contract ClaimProcessorTest is Test {
         ) = claimProcessor.claims(0);
 
         assertEq(uint8(status), uint8(ClaimProcessor.ClaimStatus.Approved));
-        assertEq(verifier_, verifier);
+        assertEq(verifier_, owner);
         assertEq(rejectionReason, "");
     }
 
@@ -191,12 +188,8 @@ contract ClaimProcessorTest is Test {
         claimProcessor.submitClaim(500 ether, "Test claim");
         vm.stopPrank();
 
-        // Grant verifier role to the test contract
-        claimProcessor.grantRole(claimProcessor.VERIFIER_ROLE(), address(this));
-
-        vm.prank(verifier);
-        // The contract doesn't check if the claim exists, so we need to modify our test
-        // Instead, we'll try to review a claim that has already been reviewed
+        // Review the claim
+        vm.prank(owner);
         claimProcessor.reviewClaim(0, true, "");
 
         // Now try to review the same claim again, which should fail
@@ -218,7 +211,7 @@ contract ClaimProcessorTest is Test {
         vm.stopPrank();
 
         // Review and approve claim
-        vm.startPrank(verifier);
+        vm.startPrank(owner);
         claimProcessor.reviewClaim(0, true, "");
         vm.stopPrank();
 
@@ -226,7 +219,7 @@ contract ClaimProcessorTest is Test {
         mockToken.mint(address(claimProcessor), 500 ether);
 
         // Process payout and verify event
-        vm.startPrank(address(this));
+        vm.startPrank(owner);
         vm.expectEmit(true, true, true, true);
         emit ClaimPaid(0, user, 500 ether);
         claimProcessor.processClaimPayout(0);
@@ -249,7 +242,7 @@ contract ClaimProcessorTest is Test {
         assertEq(amount, 500 ether);
         assertEq(description, "Test claim");
         assertEq(uint8(status), uint8(ClaimProcessor.ClaimStatus.Paid));
-        assertEq(verifier_, verifier);
+        assertEq(verifier_, owner);
         assertEq(rejectionReason, "");
     }
 
@@ -267,7 +260,7 @@ contract ClaimProcessorTest is Test {
         vm.stopPrank();
 
         // Try to process payout without approval
-        vm.startPrank(address(this));
+        vm.startPrank(owner);
         vm.expectRevert("Claim not approved");
         claimProcessor.processClaimPayout(0);
         vm.stopPrank();

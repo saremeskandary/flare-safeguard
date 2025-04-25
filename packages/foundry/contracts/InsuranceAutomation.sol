@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./mock/MockTokenInsurance.sol";
 
 /**
@@ -24,7 +23,7 @@ import "./mock/MockTokenInsurance.sol";
  * The automation system uses a task-based approach where each task
  * represents a specific operation to be performed at a scheduled time.
  */
-contract InsuranceAutomation is Ownable {
+contract InsuranceAutomation {
     // Custom errors
     error InvalidInsuranceContractAddress();
     error DueDateMustBeInFuture();
@@ -56,24 +55,16 @@ contract InsuranceAutomation is Ownable {
     );
 
     /**
-     * @dev Constructor initializes the contract with the deployer as owner
-     */
-    constructor() Ownable(msg.sender) {}
-
-    /**
      * @notice Create a new automation task
      * @param _insuranceContract The address of the insurance contract
      * @param _dueDate The due date for the task
      *
-     * This function allows the owner to schedule a new automation task for
+     * This function allows scheduling a new automation task for
      * a specific insurance contract. The task will be executed when the
      * current time reaches the due date. Tasks are identified by a unique
      * hash generated from the contract address, due date, and creation timestamp.
      */
-    function createTask(
-        address _insuranceContract,
-        uint256 _dueDate
-    ) external onlyOwner {
+    function createTask(address _insuranceContract, uint256 _dueDate) external {
         if (_insuranceContract == address(0))
             revert InvalidInsuranceContractAddress();
         if (_dueDate <= block.timestamp) revert DueDateMustBeInFuture();
@@ -118,11 +109,11 @@ contract InsuranceAutomation is Ownable {
      * @notice Remove a task
      * @param _taskId The ID of the task to remove
      *
-     * This function allows the owner to cancel a scheduled task before it
+     * This function allows canceling a scheduled task before it
      * is executed. It removes the task from storage and updates the
      * associated insurance contract's task list.
      */
-    function removeTask(bytes32 _taskId) external onlyOwner {
+    function removeTask(bytes32 _taskId) external {
         AutomationTask storage task = tasks[_taskId];
         if (task.insuranceContract == address(0)) revert TaskDoesNotExist();
         if (task.executed) revert TaskAlreadyExecuted();

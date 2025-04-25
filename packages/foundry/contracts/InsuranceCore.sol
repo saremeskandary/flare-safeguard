@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./RoleManager.sol";
 
 /**
  * @title Insurance Core
@@ -30,11 +28,8 @@ import "./RoleManager.sol";
  * The Insurance Core works in conjunction with the Claim Processor to provide
  * a complete insurance solution for RWA token holders.
  */
-contract InsuranceCore is AccessControl, ReentrancyGuard {
+contract InsuranceCore is ReentrancyGuard {
     // Custom errors
-    error InvalidRoleManager();
-    error NotAuthorized();
-    error InvalidAdminAddress();
     error InvalidCoverageLimit();
     error InvalidPremiumRate();
     error InvalidDuration();
@@ -44,9 +39,6 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     error InvalidCoverageAmount();
     error TokenNotEvaluated();
     error NoSuitableCoverageOption();
-
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant EVALUATOR_ROLE = keccak256("EVALUATOR_ROLE");
 
     struct CoverageOption {
         uint256 coverageLimit;
@@ -68,8 +60,6 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
     mapping(address => RWAEvaluation) public rwaEvaluations;
     uint256 public coverageOptionCount;
 
-    RoleManager public roleManager;
-
     event CoverageOptionAdded(
         uint256 indexed optionId,
         uint256 coverageLimit,
@@ -81,67 +71,6 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 amount,
         uint256 premium
     );
-    event AdminRoleTransferred(
-        address indexed previousAdmin,
-        address indexed newAdmin
-    );
-    event RoleManagerUpdated(
-        address indexed oldManager,
-        address indexed newManager
-    );
-
-    /**
-     * @dev Constructor initializes the contract and sets up initial roles
-     * @param _roleManager Address of the role manager contract
-     */
-    constructor(address _roleManager) {
-        if (_roleManager == address(0)) revert InvalidRoleManager();
-        roleManager = RoleManager(_roleManager);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
-    }
-
-    /**
-     * @dev Set admin role from a parent contract
-     * @param newAdmin Address of the new admin
-     * @param parentAdmin Address of the parent contract admin
-     */
-    function setAdminFromParent(
-        address newAdmin,
-        address parentAdmin
-    ) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, parentAdmin)) revert NotAuthorized();
-        if (newAdmin == address(0)) revert InvalidAdminAddress();
-
-        // Store the current admin for the event
-        address currentAdmin = msg.sender;
-
-        // Revoke admin role from the current admin if it's not the new admin
-        if (currentAdmin != newAdmin) {
-            _revokeRole(DEFAULT_ADMIN_ROLE, currentAdmin);
-        }
-
-        // Grant admin role to the new admin if they don't already have it
-        if (!hasRole(DEFAULT_ADMIN_ROLE, newAdmin)) {
-            _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
-        }
-
-        emit AdminRoleTransferred(currentAdmin, newAdmin);
-    }
-
-    /**
-     * @dev Update the role manager address
-     * @param _roleManager New role manager address
-     */
-    function updateRoleManager(
-        address _roleManager
-    ) external onlyRole(ADMIN_ROLE) {
-        if (_roleManager == address(0)) revert InvalidRoleManager();
-        address oldManager = address(roleManager);
-        roleManager = RoleManager(_roleManager);
-        emit RoleManagerUpdated(oldManager, _roleManager);
-    }
 
     /**
      * @dev Add a new coverage option
@@ -159,7 +88,7 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         uint256 premiumRate,
         uint256 minDuration,
         uint256 maxDuration
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external {
         if (coverageLimit == 0) revert InvalidCoverageLimit();
         if (premiumRate == 0) revert InvalidPremiumRate();
         if (minDuration == 0 || maxDuration < minDuration)
@@ -192,7 +121,7 @@ contract InsuranceCore is AccessControl, ReentrancyGuard {
         address tokenAddress,
         uint256 value,
         uint256 riskScore
-    ) external onlyRole(EVALUATOR_ROLE) {
+    ) external {
         if (tokenAddress == address(0)) revert InvalidTokenAddress();
         if (value == 0) revert InvalidValue();
         if (riskScore < 1 || riskScore > 100) revert InvalidRiskScore();

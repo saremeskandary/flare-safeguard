@@ -93,7 +93,7 @@ This document outlines the normal user journey for interacting with the Flare Sa
 3. **Claim Verification**
    - System initiates verification process:
      - Automated checks
-     - Expert review if required
+     - Owner review if required
      - Cross-chain verification for cross-chain claims
    - Verification status updates are recorded
    - Function calls:
@@ -145,7 +145,7 @@ This document outlines the normal user journey for interacting with the Flare Sa
 
 ## Security Measures
 - Multi-step verification process
-- Role-based access control
+- Ownership-based access control
 - Secure fund handling
 - Cross-chain security protocols
 - Automated risk assessment

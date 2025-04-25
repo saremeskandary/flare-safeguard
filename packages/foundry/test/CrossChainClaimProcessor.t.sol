@@ -55,9 +55,8 @@ contract CrossChainClaimProcessorTest is Test {
     MockBSDToken public bsdToken;
     MockContractRegistry public mockRegistry;
 
-    address public admin = address(1);
-    address public verifier = address(2);
-    address public insured = address(3);
+    address public owner;
+    address public user;
     address public usdc = address(4);
 
     uint256 public constant COVERAGE_AMOUNT = 1000 * 10 ** 18;
@@ -88,17 +87,17 @@ contract CrossChainClaimProcessorTest is Test {
             address(listener)
         );
 
-        // Setup roles
-        processor.grantRole(processor.ADMIN_ROLE(), admin);
-        processor.grantRole(processor.VERIFIER_ROLE(), verifier);
+        // Setup owner
+        owner = address(this);
+        user = address(0x3);
 
         // Fund accounts
-        bsdToken.transfer(insured, COVERAGE_AMOUNT);
+        bsdToken.transfer(user, COVERAGE_AMOUNT);
         bsdToken.transfer(address(processor), COVERAGE_AMOUNT); // Fund processor with enough tokens for payouts
-        vm.deal(insured, 100 ether);
+        vm.deal(user, 100 ether);
 
         // Setup approvals
-        vm.prank(insured);
+        vm.prank(user);
         bsdToken.approve(address(processor), type(uint256).max);
 
         // Mock the ContractRegistry address
@@ -121,7 +120,7 @@ contract CrossChainClaimProcessorTest is Test {
     }
 
     function testCreatePolicy() public {
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         (
@@ -131,7 +130,7 @@ contract CrossChainClaimProcessorTest is Test {
             uint256 startTime,
             uint256 endTime,
             bool isActive
-        ) = processor.getPolicy(insured);
+        ) = processor.getPolicy(user);
 
         assertEq(tokenAddress, usdc);
         assertEq(coverageAmount, COVERAGE_AMOUNT);
@@ -142,7 +141,7 @@ contract CrossChainClaimProcessorTest is Test {
 
     function testSubmitCrossChainClaim() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         // Submit cross-chain claim
@@ -151,11 +150,11 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         vm.expectEmit(true, true, false, true);
         emit CrossChainClaimSubmitted(
             0, // First claim ID
-            insured,
+            user,
             claimAmount,
             transactionHash,
             chainId
@@ -179,7 +178,7 @@ contract CrossChainClaimProcessorTest is Test {
             string memory rejectionReason
         ) = processor.getClaim(claimId);
 
-        assertEq(claimInsured, insured);
+        assertEq(claimInsured, user);
         assertEq(claimToken, usdc);
         assertEq(claimAmount_, claimAmount);
         assertEq(description, "Cross-chain claim");
@@ -294,7 +293,7 @@ contract CrossChainClaimProcessorTest is Test {
 
     function testVerifyCrossChainClaim() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         // Submit cross-chain claim
@@ -303,7 +302,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         uint256 claimId = processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -314,7 +313,7 @@ contract CrossChainClaimProcessorTest is Test {
         // Add a mock transfer event
         _addMockTransferEvent(
             address(0), // from (any address)
-            insured, // to (the insured)
+            user, // to (the insured)
             claimAmount, // value (the claim amount)
             usdc, // token address (the insured token)
             chainId // chain ID (the same as in the claim)
@@ -327,13 +326,13 @@ contract CrossChainClaimProcessorTest is Test {
         );
 
         // Verify claim
-        vm.prank(verifier);
+        vm.prank(owner);
         processor.verifyCrossChainClaim(claimId, proof);
 
         // Verify claim status
         _verifyClaimDetails(
             claimId,
-            insured,
+            user,
             usdc,
             claimAmount,
             ClaimProcessor.ClaimStatus.Approved
@@ -342,7 +341,7 @@ contract CrossChainClaimProcessorTest is Test {
 
     function testProcessCrossChainClaim() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         // Submit cross-chain claim
@@ -351,7 +350,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         uint256 claimId = processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -362,7 +361,7 @@ contract CrossChainClaimProcessorTest is Test {
         // Add a mock transfer event
         _addMockTransferEvent(
             address(0), // from (any address)
-            insured, // to (the insured)
+            user, // to (the insured)
             claimAmount, // value (the claim amount)
             usdc, // token address (the insured token)
             chainId // chain ID (the same as in the claim)
@@ -375,17 +374,17 @@ contract CrossChainClaimProcessorTest is Test {
         );
 
         // Verify claim
-        vm.prank(verifier);
+        vm.prank(owner);
         processor.verifyCrossChainClaim(claimId, proof);
 
         // Process claim
-        vm.prank(admin);
+        vm.prank(owner);
         processor.processCrossChainClaim(claimId);
 
         // Verify claim was processed
         _verifyClaimDetails(
             claimId,
-            insured,
+            user,
             usdc,
             claimAmount,
             ClaimProcessor.ClaimStatus.Paid
@@ -398,7 +397,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -409,7 +408,7 @@ contract CrossChainClaimProcessorTest is Test {
 
     function testFailSubmitClaimExceedingCoverage() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         bytes32 transactionHash = keccak256("test_tx");
@@ -417,7 +416,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = COVERAGE_AMOUNT + 1;
 
-        vm.prank(insured);
+        vm.prank(user);
         processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -426,9 +425,9 @@ contract CrossChainClaimProcessorTest is Test {
         );
     }
 
-    function testFailVerifyClaimWithoutVerifierRole() public {
+    function testFailVerifyClaimWithoutOwnerRole() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         // Submit cross-chain claim
@@ -437,7 +436,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         uint256 claimId = processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -471,14 +470,14 @@ contract CrossChainClaimProcessorTest is Test {
             data: response
         });
 
-        // Try to verify claim without verifier role
-        vm.prank(insured);
+        // Try to verify claim without owner role
+        vm.prank(user);
         processor.verifyCrossChainClaim(claimId, proof);
     }
 
-    function testFailProcessClaimWithoutAdminRole() public {
+    function testFailProcessClaimWithoutOwnerRole() public {
         // Create policy first
-        vm.prank(insured);
+        vm.prank(user);
         processor.createPolicy(usdc, COVERAGE_AMOUNT, PREMIUM, DURATION);
 
         // Submit cross-chain claim
@@ -487,7 +486,7 @@ contract CrossChainClaimProcessorTest is Test {
         uint16 requiredConfirmations = 12;
         uint256 claimAmount = 500 * 10 ** 18;
 
-        vm.prank(insured);
+        vm.prank(user);
         uint256 claimId = processor.submitCrossChainClaim(
             claimAmount,
             transactionHash,
@@ -525,11 +524,11 @@ contract CrossChainClaimProcessorTest is Test {
         listener.addSupportedToken(usdc, chainId);
 
         // Verify claim
-        vm.prank(verifier);
+        vm.prank(owner);
         processor.verifyCrossChainClaim(claimId, proof);
 
-        // Try to process claim without admin role
-        vm.prank(insured);
+        // Try to process claim without owner role
+        vm.prank(user);
         processor.processCrossChainClaim(claimId);
     }
 }

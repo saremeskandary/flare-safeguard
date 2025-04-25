@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -11,19 +10,15 @@ import "./DataVerification.sol";
  * @title TokenRWA
  * @dev Contract for managing Real World Asset (RWA) tokens using OpenZeppelin's ERC20 standard
  */
-contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
+contract TokenRWA is ERC20, ReentrancyGuard, Initializable {
     // Custom errors
     error InvalidVerificationContract();
-    error NotAuthorized();
-    error InvalidAdminAddress();
     error InvalidMintParameters();
     error InvalidAddresses();
     error InvalidParameters();
     error InvalidAsset();
     error NoObligation();
-
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    error Unauthorized();
 
     DataVerification public verificationContract;
     mapping(address => bool) public verifiedAssets;
@@ -33,12 +28,23 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
     string private _tokenName;
     string private _tokenSymbol;
 
+    // Owner address
+    address public owner;
+
     event AssetStatusChanged(
         address indexed asset,
         bytes32 indexed obligationId,
         bool verified
     );
-    event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() ERC20("", "") {
@@ -52,16 +58,15 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param _verificationContract Address of the verification contract
      */
     function initialize(
-        string memory tokenName, // solhint-disable-next-line no-unused-vars
-        string memory tokenSymbol, // solhint-disable-next-line no-unused-vars
+        string memory tokenName,
+        string memory tokenSymbol,
         address _verificationContract
     ) public initializer {
         if (_verificationContract == address(0))
             revert InvalidVerificationContract();
         verificationContract = DataVerification(_verificationContract);
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
+        owner = msg.sender;
 
         // Set token name and symbol
         _tokenName = tokenName;
@@ -69,31 +74,14 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
     }
 
     /**
-     * @dev Set admin role from a parent contract
-     * @param newAdmin Address of the new admin
-     * @param parentAdmin Address of the parent contract admin
+     * @dev Transfer ownership to a new address
+     * @param newOwner Address of the new owner
      */
-    function setAdminFromParent(
-        address newAdmin,
-        address parentAdmin
-    ) external {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, parentAdmin)) revert NotAuthorized();
-        if (newAdmin == address(0)) revert InvalidAdminAddress();
-
-        // Store the current admin for the event
-        address currentAdmin = msg.sender;
-
-        // Revoke admin role from the current admin if it's not the new admin
-        if (currentAdmin != newAdmin) {
-            _revokeRole(DEFAULT_ADMIN_ROLE, currentAdmin);
-        }
-
-        // Grant admin role to the new admin if they don't already have it
-        if (!hasRole(DEFAULT_ADMIN_ROLE, newAdmin)) {
-            _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
-        }
-
-        emit AdminChanged(currentAdmin, newAdmin);
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert InvalidAddresses();
+        address oldOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
     }
 
     /**
@@ -115,10 +103,7 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param to Address to mint tokens to
      * @param amount Amount of tokens to mint
      */
-    function mint(
-        address to,
-        uint256 amount
-    ) external onlyRole(MINTER_ROLE) nonReentrant {
+    function mint(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0) || amount == 0) revert InvalidMintParameters();
         _mint(to, amount);
     }
@@ -135,7 +120,7 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
         address obligatedParty,
         uint256 deadline,
         string memory description
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external onlyOwner {
         if (asset == address(0) || obligatedParty == address(0))
             revert InvalidAddresses();
         if (deadline <= block.timestamp || bytes(description).length == 0)
@@ -155,7 +140,7 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @dev Unverify an asset
      * @param asset Address of the asset to unverify
      */
-    function unverifyAsset(address asset) external onlyRole(ADMIN_ROLE) {
+    function unverifyAsset(address asset) external onlyOwner {
         if (asset == address(0) || !verifiedAssets[asset])
             revert InvalidAsset();
         verifiedAssets[asset] = false;

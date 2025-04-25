@@ -3,16 +3,15 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import "../contracts/DeploymentManager.sol";
-import "../contracts/libraries/RWADeploymentLib.sol";
+import "../contracts/TokenRWAFactory.sol";
+import "../contracts/TokenRWA.sol";
+import "../contracts/DataVerification.sol";
 
 /**
  * @title DeployRWA
  * @dev Script to deploy the RWA contracts for Flare
  */
 contract DeployRWA is Script {
-    using RWADeploymentLib for *;
-
     function run() public returns (address) {
         return runWithBroadcast(true, address(0));
     }
@@ -29,25 +28,42 @@ contract DeployRWA is Script {
             vm.startBroadcast();
         }
 
-        // Deploy the deployment manager
-        DeploymentManager manager = new DeploymentManager();
-        console2.log("DeploymentManager deployed at: %s", address(manager));
+        // Deploy DataVerification contract
+        console2.log("Deploying DataVerification contract...");
+        DataVerification dataVerification = new DataVerification();
+        console2.log(
+            "DataVerification deployed at: %s",
+            address(dataVerification)
+        );
 
-        // Deploy RWA contracts using the library
-        DeploymentManager.DeploymentInfo memory info = RWADeploymentLib
-            .deployRWA(manager, deployer);
+        // Deploy TokenRWAFactory
+        console2.log("Deploying TokenRWAFactory...");
+        TokenRWAFactory factory = new TokenRWAFactory(
+            address(dataVerification)
+        );
+        console2.log("TokenRWAFactory deployed at: %s", address(factory));
+
+        // Deploy implementation contract
+        console2.log("Deploying TokenRWA implementation...");
+        factory.deployImplementation();
+        console2.log(
+            "TokenRWA implementation deployed at: %s",
+            address(factory.implementation())
+        );
 
         // Log deployment summary
         console2.log("\n=== RWA Deployment Summary ===");
-        console2.log("DataVerification: %s", info.dataVerification);
-        console2.log("RoleManager: %s", info.roleManager);
-        console2.log("TokenRWAFactory: %s", info.factory);
-        console2.log("TokenRWA Implementation: %s", info.implementation);
-        console2.log("Deployer: %s", info.deployer);
+        console2.log("DataVerification: %s", address(dataVerification));
+        console2.log("TokenRWAFactory: %s", address(factory));
+        console2.log(
+            "TokenRWA Implementation: %s",
+            address(factory.implementation())
+        );
+        console2.log("Deployer: %s", deployer);
 
         if (startBroadcast) {
             vm.stopBroadcast();
         }
-        return info.factory;
+        return address(factory);
     }
 }

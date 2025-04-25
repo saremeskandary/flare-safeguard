@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BSDToken.sol";
 
 /**
@@ -19,7 +18,7 @@ import "./BSDToken.sol";
  * This is a simplified version compared to BSDLiquidityPool, focusing on core
  * functionality without advanced features like fee distribution or liquidity mining.
  */
-contract LiquidityPool is Ownable {
+contract LiquidityPool {
     // Custom errors
     error AmountMustBeGreaterThanZero();
     error InsufficientBalance();
@@ -52,7 +51,7 @@ contract LiquidityPool is Ownable {
      * @param _bsdToken Address of the BSD token contract
      * @param _usdtToken Address of the USDT token contract
      */
-    constructor(address _bsdToken, address _usdtToken) Ownable(msg.sender) {
+    constructor(address _bsdToken, address _usdtToken) {
         bsdToken = BSDToken(_bsdToken);
         usdtToken = IERC20(_usdtToken);
     }

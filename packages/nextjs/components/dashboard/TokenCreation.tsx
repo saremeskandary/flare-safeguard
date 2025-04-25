@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useScaffoldWriteContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { useAccount } from "wagmi";
-import { TOKEN_RWA_FACTORY_ADMIN_ROLE } from "~~/utils/contractConstants";
+import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export const TokenCreation = () => {
     const [tokenName, setTokenName] = useState("");
@@ -11,14 +9,6 @@ export const TokenCreation = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    const { address } = useAccount();
-
-    // Check if the current user has the ADMIN_ROLE
-    const { data: hasAdminRole } = useScaffoldReadContract({
-        contractName: "TokenRWAFactory",
-        functionName: "hasRole",
-        args: [TOKEN_RWA_FACTORY_ADMIN_ROLE, address],
-    });
 
     // Use the recommended object parameter version
     const { writeContractAsync } = useScaffoldWriteContract({
@@ -72,11 +62,6 @@ export const TokenCreation = () => {
                     <span>{success}</span>
                 </div>
             )}
-            {hasAdminRole === false && (
-                <div className="alert alert-warning">
-                    <span>You don't have permission to create tokens. You need the ADMIN_ROLE.</span>
-                </div>
-            )}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="form-control">
                     <label className="label">
@@ -88,7 +73,7 @@ export const TokenCreation = () => {
                         className="input input-bordered w-full"
                         value={tokenName}
                         onChange={e => setTokenName(e.target.value)}
-                        disabled={isCreating || hasAdminRole === false}
+                        disabled={isCreating}
                     />
                 </div>
                 <div className="form-control">
@@ -101,13 +86,13 @@ export const TokenCreation = () => {
                         className="input input-bordered w-full"
                         value={tokenSymbol}
                         onChange={e => setTokenSymbol(e.target.value)}
-                        disabled={isCreating || hasAdminRole === false}
+                        disabled={isCreating}
                     />
                 </div>
                 <button
                     type="submit"
                     className={`btn btn-primary ${isCreating ? "loading" : ""}`}
-                    disabled={isCreating || hasAdminRole === false}
+                    disabled={isCreating}
                 >
                     {isCreating ? "Creating Token..." : "Create Token"}
                 </button>

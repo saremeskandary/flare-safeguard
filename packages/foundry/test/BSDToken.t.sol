@@ -48,20 +48,11 @@ contract BSDTokenTest is Test {
         assertEq(token.totalSupply(), amount);
     }
 
-    function testGovernance() public {
-        // Test governance features
-        address newOwner = makeAddr("owner");
-
-        // Transfer ownership
-        token.transferOwnership(newOwner);
-        assertEq(token.owner(), newOwner);
-
-        // Test governance functions
-        vm.prank(newOwner);
+    function testPausability() public {
+        // Test pausability features
         token.pause();
         assertTrue(token.paused());
 
-        vm.prank(newOwner);
         token.unpause();
         assertFalse(token.paused());
     }
@@ -86,9 +77,5 @@ contract BSDTokenTest is Test {
         vm.expectRevert("Not enough balance");
         vm.prank(user1);
         token.transfer(user2, 100 ether);
-
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(user1);
-        token.transferOwnership(user2);
     }
 }
