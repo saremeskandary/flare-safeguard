@@ -1,10 +1,13 @@
-# Safeguard - RWA Insurance Platform [Safeguard Frontend](https://safeguard.sarem.online/)
+# Safeguard - RWA Insurance Platform
 
 ## Vision
 
 In the rapidly evolving world of blockchain and cryptocurrency, we believe the potential for growth and innovation is limitless. However, the volatility and risk of scams have created a barrier to mass adoption, hindering the widespread acceptance of cryptoassets.
 
 At Safeguard, we're committed to bridging this gap by harnessing the power of insurance and banking expertise to create innovative solutions that reduce these risks. Our goal is to empower individuals and institutions to confidently invest in the crypto-asset market, knowing that their assets are protected and have the proper transparency assured.
+
+## Live Demo
+Visit our live demo at [Safeguard Frontend](https://safeguard.sarem.online/) to explore the platform.
 
 ## Overview
 

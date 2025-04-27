@@ -11,6 +11,7 @@ import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
 import { ADMIN_ROLE } from "~~/utils/contractConstants";
+import FrontendLink from "./FrontendLink";
 
 type HeaderMenuLink = {
   label: string;
@@ -125,6 +126,7 @@ export const Header = () => {
       </div>
       <div className="navbar-end flex-grow mr-4">
         <div className="flex items-center gap-2">
+          <FrontendLink />
           <RainbowKitCustomConnectButton />
           {isAdminInsuranceCore && (
             <div className="badge badge-primary">Admin In</div>
