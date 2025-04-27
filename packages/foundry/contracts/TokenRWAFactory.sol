@@ -60,12 +60,22 @@ contract TokenRWAFactory is AccessControl {
             bytes(symbol).length == 0
         ) revert InvalidParameters();
 
+        // Clone the implementation
         token = Clones.clone(address(implementation));
+
+        // Initialize the token with name, symbol, and verification contract
         TokenRWA(token).initialize(name, symbol, verificationContract);
 
-        address factoryAdmin = msg.sender;
-        TokenRWA(token).setAdminFromParent(factoryAdmin, factoryAdmin);
-        emit TokenEvent(token, name, symbol, factoryAdmin);
+        // Grant DEFAULT_ADMIN_ROLE to the factory admin first
+        TokenRWA(token).grantRole(
+            TokenRWA(token).DEFAULT_ADMIN_ROLE(),
+            msg.sender
+        );
+
+        // Then set the admin
+        TokenRWA(token).setAdminFromParent(msg.sender, msg.sender);
+
+        emit TokenEvent(token, name, symbol, msg.sender);
         return token;
     }
 

@@ -1,4 +1,5 @@
 import { BaseError as BaseViemError, ContractFunctionRevertedError } from "viem";
+import { formatErrorName } from "./formatErrorName";
 
 /**
  * Parses an viem/wagmi error to get a displayable string
@@ -20,9 +21,8 @@ export const getParsedError = (error: any): string => {
         parsedError.data.errorName !== "Error"
       ) {
         const customErrorArgs = parsedError.data.args?.toString() ?? "";
-        return `${parsedError.shortMessage.replace(/reverted\.$/, "reverted with the following reason:")}\n${
-          parsedError.data.errorName
-        }(${customErrorArgs})`;
+        const formattedErrorName = formatErrorName(parsedError.data.errorName);
+        return `${parsedError.shortMessage.replace(/reverted\.$/, "reverted with the following reason:")}\n${formattedErrorName}(${customErrorArgs})`;
       }
 
       return parsedError.shortMessage;

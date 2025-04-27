@@ -19,99 +19,110 @@ import "../contracts/DataVerification.sol";
 contract Deploy is Script {
     function setUp() public {}
 
-    function run() public {
-        // Get the address that will be executing the deployment
-        address deployer = msg.sender;
-        console.log("=== Starting Deployment Process ===");
-        console.log("Deployer address:", deployer);
-
-        vm.startBroadcast();
-
-        // Deploy InsuranceCore
+    function deployInsuranceCore(address deployer) internal returns (address) {
         console.log("\n=== Deploying InsuranceCore ===");
         DeployInsuranceCore deployerContract = new DeployInsuranceCore();
         address insuranceCoreAddress = deployerContract.runWithBroadcast(false);
         console.log("InsuranceCore deployed at:", insuranceCoreAddress);
 
-        // Double check roles in InsuranceCore
         InsuranceCore insuranceCore = InsuranceCore(insuranceCoreAddress);
-        console.log("\n=== Verifying InsuranceCore Roles ===");
+
+        // Grant roles
         if (
             !insuranceCore.hasRole(insuranceCore.DEFAULT_ADMIN_ROLE(), deployer)
         ) {
-            console.log(
-                "Granting DEFAULT_ADMIN_ROLE in InsuranceCore to deployer..."
-            );
             insuranceCore.grantRole(
                 insuranceCore.DEFAULT_ADMIN_ROLE(),
                 deployer
             );
         }
         if (!insuranceCore.hasRole(insuranceCore.ADMIN_ROLE(), deployer)) {
-            console.log("Granting ADMIN_ROLE in InsuranceCore to deployer...");
             insuranceCore.grantRole(insuranceCore.ADMIN_ROLE(), deployer);
         }
         if (!insuranceCore.hasRole(insuranceCore.EVALUATOR_ROLE(), deployer)) {
-            console.log(
-                "Granting EVALUATOR_ROLE in InsuranceCore to deployer..."
-            );
             insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), deployer);
         }
 
-        // Verify InsuranceCore roles after granting
+        // Verify roles
         require(
             insuranceCore.hasRole(insuranceCore.DEFAULT_ADMIN_ROLE(), deployer),
-            "Deployer must have DEFAULT_ADMIN_ROLE in InsuranceCore"
+            "DEFAULT_ADMIN_ROLE missing"
         );
         require(
             insuranceCore.hasRole(insuranceCore.ADMIN_ROLE(), deployer),
-            "Deployer must have ADMIN_ROLE in InsuranceCore"
+            "ADMIN_ROLE missing"
         );
         require(
             insuranceCore.hasRole(insuranceCore.EVALUATOR_ROLE(), deployer),
-            "Deployer must have EVALUATOR_ROLE in InsuranceCore"
+            "EVALUATOR_ROLE missing"
         );
-        console.log("[OK] InsuranceCore roles verified");
 
-        // Deploy DataVerification
+        console.log("InsuranceCore Admin Addresses:");
+        console.log("DEFAULT_ADMIN_ROLE:", deployer);
+        console.log("ADMIN_ROLE:", deployer);
+        console.log("EVALUATOR_ROLE:", deployer);
+
+        return insuranceCoreAddress;
+    }
+
+    function deployDataVerification() internal returns (address) {
         console.log("\n=== Deploying DataVerification ===");
         DataVerification verification = new DataVerification();
         address verificationAddress = address(verification);
         console.log("DataVerification deployed at:", verificationAddress);
+        return verificationAddress;
+    }
 
-        // Deploy TokenRWAFactory
+    function deployTokenRWAFactory(
+        address verificationAddress,
+        address deployer
+    ) internal returns (address) {
         console.log("\n=== Deploying TokenRWAFactory ===");
         TokenRWAFactory factory = new TokenRWAFactory(verificationAddress);
         address rwaFactoryAddress = address(factory);
         console.log("TokenRWAFactory deployed at:", rwaFactoryAddress);
 
-        // Grant roles to deployer
-        console.log("\n=== Setting up TokenRWAFactory Roles ===");
-        factory.grantRole(factory.DEFAULT_ADMIN_ROLE(), deployer);
-        factory.grantRole(factory.ADMIN_ROLE(), deployer);
+        // Grant roles with explicit verification
+        if (!factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer)) {
+            factory.grantRole(factory.DEFAULT_ADMIN_ROLE(), deployer);
+            require(
+                factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer),
+                "Failed to grant DEFAULT_ADMIN_ROLE"
+            );
+        }
 
-        // Verify TokenRWAFactory roles
+        if (!factory.hasRole(factory.ADMIN_ROLE(), deployer)) {
+            factory.grantRole(factory.ADMIN_ROLE(), deployer);
+            require(
+                factory.hasRole(factory.ADMIN_ROLE(), deployer),
+                "Failed to grant ADMIN_ROLE"
+            );
+        }
+
+        // Double-check roles after granting
         require(
             factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer),
-            "Deployer must have DEFAULT_ADMIN_ROLE in TokenRWAFactory"
+            "DEFAULT_ADMIN_ROLE verification failed"
         );
         require(
             factory.hasRole(factory.ADMIN_ROLE(), deployer),
-            "Deployer must have ADMIN_ROLE in TokenRWAFactory"
-        );
-        console.log("[OK] TokenRWAFactory roles verified");
-        console.log(
-            "Deployer has ADMIN_ROLE in TokenRWAFactory:",
-            factory.hasRole(factory.ADMIN_ROLE(), deployer)
-        );
-        console.log(
-            "Deployer has DEFAULT_ADMIN_ROLE in TokenRWAFactory:",
-            factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), deployer)
+            "ADMIN_ROLE verification failed"
         );
 
-        // Deploy implementation contract
+        console.log("TokenRWAFactory Admin Addresses:");
+        console.log("DEFAULT_ADMIN_ROLE:", deployer);
+        console.log("ADMIN_ROLE:", deployer);
+
+        return rwaFactoryAddress;
+    }
+
+    function deployTokenRWAImplementation(
+        address rwaFactoryAddress,
+        address deployer
+    ) internal {
         console.log("\n=== Deploying TokenRWA Implementation ===");
-        // Switch to deployer context for implementation deployment
+        TokenRWAFactory factory = TokenRWAFactory(rwaFactoryAddress);
+
         vm.stopBroadcast();
         vm.startBroadcast(deployer);
 
@@ -119,20 +130,38 @@ contract Deploy is Script {
         console.log("TokenRWA implementation deployed");
         require(
             address(factory.implementation()) != address(0),
-            "TokenRWA implementation deployment failed"
+            "Implementation deployment failed"
         );
-        console.log("[OK] TokenRWA implementation verified");
+        console.log(
+            "TokenRWA Implementation:",
+            address(factory.implementation())
+        );
+    }
+
+    function run() public {
+        // Get the deployer address from the default signer
+        address deployer = msg.sender;
+
+        console.log("=== Starting Deployment Process ===");
+        console.log("Deployer address:", deployer);
+
+        vm.startBroadcast();
+
+        // Deploy contracts in sequence
+        address insuranceCoreAddress = deployInsuranceCore(deployer);
+        address verificationAddress = deployDataVerification();
+        address rwaFactoryAddress = deployTokenRWAFactory(
+            verificationAddress,
+            deployer
+        );
+        deployTokenRWAImplementation(rwaFactoryAddress, deployer);
 
         console.log("\n=== Deployment Summary ===");
         console.log("InsuranceCore:", insuranceCoreAddress);
         console.log("DataVerification:", verificationAddress);
         console.log("TokenRWAFactory:", rwaFactoryAddress);
-        console.log(
-            "TokenRWA Implementation:",
-            address(factory.implementation())
-        );
         console.log("Deployer:", deployer);
-        console.log("All roles verified and contracts deployed successfully!");
+        console.log("All contracts deployed successfully!");
         console.log("========================");
 
         vm.stopBroadcast();

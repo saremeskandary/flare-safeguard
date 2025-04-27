@@ -77,7 +77,7 @@ export const RoleManagement = () => {
                 <label className="label">
                     <span className="label-text">Contract Type</span>
                 </label>
-                <select 
+                <select
                     className="select select-bordered w-full"
                     value={contractType}
                     onChange={(e) => setContractType(e.target.value as "InsuranceCore" | "TokenRWAFactory")}

@@ -24,6 +24,21 @@ export const TokenCreation = () => {
         contractName: "TokenRWAFactory",
     });
 
+    const grantAdminRole = async (targetAddress: string) => {
+        try {
+            const tx = await writeContractAsync({
+                functionName: "grantRole",
+                args: [ADMIN_ROLE, targetAddress],
+            });
+            if (tx) {
+                setSuccess("Admin role granted successfully!");
+            }
+        } catch (error) {
+            console.error("Error granting admin role:", error);
+            setError("Failed to grant admin role. Please try again.");
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -74,6 +89,12 @@ export const TokenCreation = () => {
             {isAdminTokenRWAFactoryRole === false && (
                 <div className="alert alert-warning">
                     <span>You don't have permission to create tokens. You need the ADMIN_ROLE.</span>
+                    <button
+                        className="btn btn-sm btn-primary mt-2"
+                        onClick={() => address && grantAdminRole(address)}
+                    >
+                        Request Admin Role
+                    </button>
                 </div>
             )}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

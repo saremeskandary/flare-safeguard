@@ -52,20 +52,20 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param _verificationContract Address of the verification contract
      */
     function initialize(
-        string memory tokenName, // solhint-disable-next-line no-unused-vars
-        string memory tokenSymbol, // solhint-disable-next-line no-unused-vars
+        string memory tokenName,
+        string memory tokenSymbol,
         address _verificationContract
     ) public initializer {
         if (_verificationContract == address(0))
             revert InvalidVerificationContract();
-        verificationContract = DataVerification(_verificationContract);
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
+        verificationContract = DataVerification(_verificationContract);
 
         // Set token name and symbol
         _tokenName = tokenName;
         _tokenSymbol = tokenSymbol;
+
+        // Note: We don't grant roles here anymore as they will be granted by the factory
     }
 
     /**
@@ -93,6 +93,11 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
             _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
         }
 
+        // Also grant MINTER_ROLE to the new admin
+        if (!hasRole(MINTER_ROLE, newAdmin)) {
+            _grantRole(MINTER_ROLE, newAdmin);
+        }
+
         emit AdminChanged(currentAdmin, newAdmin);
     }
 
@@ -115,10 +120,7 @@ contract TokenRWA is ERC20, AccessControl, ReentrancyGuard, Initializable {
      * @param to Address to mint tokens to
      * @param amount Amount of tokens to mint
      */
-    function mint(
-        address to,
-        uint256 amount
-    ) external onlyRole(MINTER_ROLE) nonReentrant {
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
         if (to == address(0) || amount == 0) revert InvalidMintParameters();
         _mint(to, amount);
     }
