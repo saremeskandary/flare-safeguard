@@ -21,11 +21,11 @@ contract Deploy is Script {
 
     function deployInsuranceCore(address deployer) internal returns (address) {
         console.log("\n=== Deploying InsuranceCore ===");
-        DeployInsuranceCore deployerContract = new DeployInsuranceCore();
-        address insuranceCoreAddress = deployerContract.runWithBroadcast(false);
-        console.log("InsuranceCore deployed at:", insuranceCoreAddress);
 
-        InsuranceCore insuranceCore = InsuranceCore(insuranceCoreAddress);
+        // Deploy InsuranceCore directly instead of using DeployInsuranceCore script
+        InsuranceCore insuranceCore = new InsuranceCore();
+        address insuranceCoreAddress = address(insuranceCore);
+        console.log("InsuranceCore deployed at:", insuranceCoreAddress);
 
         // Grant roles
         if (
@@ -41,6 +41,37 @@ contract Deploy is Script {
         }
         if (!insuranceCore.hasRole(insuranceCore.EVALUATOR_ROLE(), deployer)) {
             insuranceCore.grantRole(insuranceCore.EVALUATOR_ROLE(), deployer);
+        }
+
+        // Add initial coverage options
+        console.log("Adding initial coverage options...");
+
+        // Coverage Option 1: Basic Coverage
+        try
+            insuranceCore.addCoverageOption(
+                100_000 ether, // coverageLimit: 100,000 FLR
+                100, // premiumRate: 1% (100 basis points)
+                30 days, // minDuration
+                365 days // maxDuration
+            )
+        {
+            console.log("Basic coverage option added successfully");
+        } catch Error(string memory reason) {
+            console.log("Failed to add basic coverage option:", reason);
+        }
+
+        // Coverage Option 2: Premium Coverage
+        try
+            insuranceCore.addCoverageOption(
+                500_000 ether, // coverageLimit: 500,000 FLR
+                150, // premiumRate: 1.5% (150 basis points)
+                90 days, // minDuration
+                730 days // maxDuration
+            )
+        {
+            console.log("Premium coverage option added successfully");
+        } catch Error(string memory reason) {
+            console.log("Failed to add premium coverage option:", reason);
         }
 
         // Verify roles
@@ -122,9 +153,6 @@ contract Deploy is Script {
     ) internal {
         console.log("\n=== Deploying TokenRWA Implementation ===");
         TokenRWAFactory factory = TokenRWAFactory(rwaFactoryAddress);
-
-        vm.stopBroadcast();
-        vm.startBroadcast(deployer);
 
         factory.deployImplementation();
         console.log("TokenRWA implementation deployed");
