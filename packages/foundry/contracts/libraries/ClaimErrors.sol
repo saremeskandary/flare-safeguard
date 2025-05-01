@@ -23,4 +23,8 @@ library ClaimErrors {
     error ClaimNotApproved();
     error ClaimAlreadyPaid();
     error TransferFailed();
+
+    error PolicyTooNew(); // Policy hasn't met minimum coverage time
+    error InsufficientPremium(); // Premium paid is below minimum requirement
+    error ClaimCooldownActive(); // User must wait before submitting another claim
 }

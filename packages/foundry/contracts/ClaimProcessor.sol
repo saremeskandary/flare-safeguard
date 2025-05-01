@@ -49,6 +49,7 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         ClaimStatus status;
         address verifier;
         string rejectionReason;
+        uint256 reviewDeadline;
     }
 
     struct InsurancePolicy {
@@ -64,9 +65,13 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     mapping(uint256 => Claim) public claims;
     mapping(address => InsurancePolicy) public policies;
     mapping(address => uint256[]) public userClaims;
+    mapping(address => uint256) public lastClaimTime;
 
     uint256 public claimCount;
     IERC20 public bsdToken;
+    uint256 public constant CLAIM_COOLDOWN = 7 days; // One claim per week per user
+    uint256 public constant MINIMUM_COVERAGE_TIME = 30 days; // Must have policy for at least 30 days
+    uint256 public constant MINIMUM_PREMIUM = 1 ether; // Minimum premium requirement
 
     event ClaimSubmitted(
         uint256 indexed claimId,
@@ -85,21 +90,25 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
         uint256 coverageAmount
     );
 
-    constructor(address _bsdToken) {
+    constructor(address _bsdToken, address admin) {
         if (_bsdToken == address(0))
             revert ClaimErrors.InvalidBSDTokenAddress();
         bsdToken = IERC20(_bsdToken);
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ADMIN_ROLE, admin);
     }
 
     /**
-     * @dev Create a new insurance policy
-     * @param tokenAddress Address of the insured token
-     * @param coverageAmount Amount of coverage
-     * @param premium Premium amount
-     * @param duration Duration in days
+     * @dev Create a new insurance policy for a user
+     * @notice This function allows users to create an insurance policy by paying a premium in BSD tokens
+     * @notice The policy provides coverage for a specific token with defined coverage amount and duration
+     * @param tokenAddress The address of the token to be insured
+     * @param coverageAmount The maximum amount that can be claimed under this policy
+     * @param premium The amount of BSD tokens required as premium payment
+     * @param duration The duration of the policy in days
+     * @custom:requirements The token address must be valid, coverage amount and premium must be non-zero
+     * @custom:effects Transfers premium from user to contract and creates a new policy
      */
     function createPolicy(
         address tokenAddress,
@@ -131,21 +140,47 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Submit a new claim
-     * @param amount Claim amount
-     * @param description Description of the claim
+     * @dev Submit a new insurance claim with rate limiting and spam prevention
+     * @notice This function allows policyholders to submit a claim for their insured tokens
+     * @notice Claims are subject to cooldown periods and minimum policy requirements
+     * @param amount The amount being claimed
+     * @param description A detailed description of the claim and reason for filing
+     * @custom:requirements
+     *  - Policy must be active and not expired
+     *  - Claim amount must not exceed coverage
+     *  - Policy must be active for minimum coverage time (30 days)
+     *  - Premium must meet minimum requirement (1 ETH)
+     *  - Must respect cooldown period between claims (7 days)
+     * @custom:effects
+     *  - Creates a new claim record
+     *  - Updates last claim timestamp
+     *  - Emits ClaimSubmitted event
      */
     function submitClaim(
         uint256 amount,
         string memory description
     ) external nonReentrant {
         InsurancePolicy memory policy = policies[msg.sender];
+
+        // Check if user has an active policy with minimum requirements
         if (!policy.isActive) revert ClaimErrors.PolicyNotActive();
         if (block.timestamp > policy.endTime)
             revert ClaimErrors.PolicyExpired();
         if (amount > policy.coverageAmount)
             revert ClaimErrors.AmountExceedsCoverage();
 
+        // checks for spam prevention
+        if (block.timestamp < policy.startTime + MINIMUM_COVERAGE_TIME)
+            revert ClaimErrors.PolicyTooNew();
+        if (policy.premium < MINIMUM_PREMIUM)
+            revert ClaimErrors.InsufficientPremium();
+        if (block.timestamp < lastClaimTime[msg.sender] + CLAIM_COOLDOWN)
+            revert ClaimErrors.ClaimCooldownActive();
+
+        // Update last claim time
+        lastClaimTime[msg.sender] = block.timestamp;
+
+        // Create the claim
         uint256 claimId = claimCount++;
         claims[claimId] = Claim({
             insured: msg.sender,
@@ -155,7 +190,8 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
             description: description,
             status: ClaimStatus.Pending,
             verifier: address(0),
-            rejectionReason: ""
+            rejectionReason: "",
+            reviewDeadline: block.timestamp + 30 days
         });
 
         userClaims[msg.sender].push(claimId);
@@ -163,10 +199,29 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Review a claim
-     * @param claimId ID of the claim
-     * @param approved Whether the claim is approved
-     * @param reason Reason for rejection if not approved
+     * @dev Review and decide on a submitted claim
+     * @notice This function allows verifiers to approve or reject claims
+     * @notice Only accounts with VERIFIER_ROLE can call this function
+     * @param claimId The ID of the claim to be reviewed
+     * @param approved Boolean indicating whether the claim is approved
+     * @param reason The reason for rejection if the claim is not approved
+     * @custom:requirements The claim must be in Pending or UnderReview status
+     * @custom:effects Updates claim status and emits ClaimStatusUpdated event
+     *
+     *  FIXME what if the verifier never calls this function?
+     *  If verifier doesn't review within 30 days:
+     *  Anyone can call enforceReviewDeadline(claimId)
+     *  Claim auto-rejects with specified reason
+     *  Claimer gets final resolution (though rejected)
+     *  Funds remain in contract (claimer doesn't receive payment)
+     *  To Actually Get Paid The claimer would need to:
+     *  - Resubmit a new claim (if policy still active)
+     *  - Hope for verifier participation in new claim
+     *  - Consider providing stronger evidence/documentation
+     *  should we modify the auto-rejection consequence? We could instead:
+     *  1) Automatically escalate to admin review
+     *  2) Enable community voting mechanism
+     *  3) Implement secondary verification layer
      */
     function reviewClaim(
         uint256 claimId,
@@ -189,8 +244,11 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Process claim payout
-     * @param claimId ID of the claim
+     * @dev Internal function to process claim payout
+     * @notice This function handles the actual transfer of funds for approved claims
+     * @param claimId The ID of the claim to be paid out
+     * @custom:requirements The claim must be approved and not already paid, policy must be active
+     * @custom:effects Transfers funds to the insured and updates claim status to Paid
      */
     function processPayout(uint256 claimId) internal {
         Claim storage claim = claims[claimId];
@@ -214,7 +272,11 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
 
     /**
      * @dev Public function to process claim payout
-     * @param claimId ID of the claim
+     * @notice This function allows administrators to trigger the payout of approved claims
+     * @notice Only accounts with ADMIN_ROLE can call this function
+     * @param claimId The ID of the claim to be paid out
+     * @custom:requirements The caller must have ADMIN_ROLE
+     * @custom:effects Calls internal processPayout function
      */
     function processClaimPayout(
         uint256 claimId
@@ -223,8 +285,17 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Get claim details
-     * @param claimId ID of the claim
+     * @dev Get detailed information about a specific claim
+     * @notice This function returns all details of a claim including status and verification information
+     * @param claimId The ID of the claim to query
+     * @return insured The address of the policyholder
+     * @return tokenAddress The address of the insured token
+     * @return amount The claimed amount
+     * @return timestamp When the claim was submitted
+     * @return description The claim description
+     * @return status The current status of the claim
+     * @return verifier The address of the verifier who reviewed the claim
+     * @return rejectionReason The reason for rejection if the claim was rejected
      */
     function getClaim(
         uint256 claimId
@@ -256,9 +327,10 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Get user's claims
-     * @param user Address of the user
-     * @return Array of claim IDs
+     * @dev Get all claims associated with a specific user
+     * @notice This function returns an array of claim IDs for a given user
+     * @param user The address of the user to query
+     * @return Array of claim IDs associated with the user
      */
     function getUserClaims(
         address user
@@ -267,8 +339,15 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Get policy details
-     * @param insured Address of the insured
+     * @dev Get detailed information about a user's insurance policy
+     * @notice This function returns all details of a user's active insurance policy
+     * @param insured The address of the policyholder
+     * @return tokenAddress The address of the insured token
+     * @return coverageAmount The maximum coverage amount
+     * @return premium The premium amount paid
+     * @return startTime When the policy started
+     * @return endTime When the policy expires
+     * @return isActive Whether the policy is currently active
      */
     function getPolicy(
         address insured
@@ -293,5 +372,23 @@ contract ClaimProcessor is AccessControl, ReentrancyGuard {
             policy.endTime,
             policy.isActive
         );
+    }
+
+    /**
+     * @dev Automatically reject claims that pass review deadline
+     * @notice Can be called by anyone to enforce timely processing
+     */
+    function enforceReviewDeadline(uint256 claimId) external {
+        Claim storage claim = claims[claimId];
+
+        if (
+            block.timestamp > claim.reviewDeadline &&
+            (claim.status == ClaimStatus.Pending ||
+                claim.status == ClaimStatus.UnderReview)
+        ) {
+            claim.status = ClaimStatus.Rejected;
+            claim.rejectionReason = "Not reviewed within deadline";
+            emit ClaimStatusUpdated(claimId, ClaimStatus.Rejected);
+        }
     }
 }
